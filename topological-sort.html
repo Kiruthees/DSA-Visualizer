@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Topological Sort</title>
+  <style>
+    /* Global styling, same as Prim's */
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1e1e2f;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    a {
+      color: #72c0f9;
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      align-self: flex-start;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .controls {
+      background-color: #29294d;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      width: 400px;
+      box-shadow: 0 0 8px rgba(114, 192, 249, 0.5);
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    textarea {
+      resize: none;
+      font-family: monospace;
+      font-size: 1rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #222240;
+      color: #f0f0f0;
+      height: 120px;
+      outline: none;
+    }
+
+    button {
+      background-color: #72c0f9;
+      border: none;
+      padding: 0.7rem;
+      border-radius: 6px;
+      font-weight: 600;
+      color: #1e1e2f;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #559ed9;
+    }
+
+    #visual {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      min-height: 50px;
+    }
+
+    .node {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background-color: #444466;
+      color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 0 8px transparent;
+    }
+
+    .node.visited {
+      background-color: #4caf50; /* green */
+      box-shadow: 0 0 12px #4caf50;
+    }
+    .node.queued {
+      background-color: #2196f3; /* blue */
+      box-shadow: 0 0 12px #2196f3;
+    }
+    .node.sorted {
+      background-color: #f44336; /* red */
+      box-shadow: 0 0 12px #f44336;
+    }
+
+    #order {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      min-height: 50px;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    #graph-container {
+      position: relative;
+      width: 500px;
+      height: 400px;
+      border-radius: 8px;
+      background-color: #29294d;
+      box-shadow: 0 0 15px rgba(114, 192, 249, 0.4);
+      margin-bottom: 2rem;
+    }
+
+    #graph {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-node {
+      position: absolute;
+      width: 45px;
+      height: 45px;
+      background-color: #72c0f9;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #1e1e2f;
+      box-shadow: 0 0 8px #72c0f9;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 500px;
+      height: 400px;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .edge {
+      stroke: #ffeb3b;
+      stroke-width: 2;
+      marker-end: url(#arrowhead);
+      opacity: 0.8;
+      transition: stroke 0.3s ease;
+    }
+    
+  </style>
+</head>
+<body>
+  <a href="index.html">← Back to Home</a>
+  <h1>Topological Sort</h1>
+
+  <div class="controls">
+    <p>Enter number of nodes (≤ 15) and edges. Each edge: u v (directed u → v)</p>
+    <textarea id="input" placeholder="6 6\n5 2\n5 0\n4 0\n4 1\n2 3\n3 1"></textarea>
+    <button onclick="runTopo()">Run</button>
+  </div>
+
+  <h2>Algorithm Visual:</h2>
+  <div id="visual"></div>
+
+  <h2>Topological Order:</h2>
+  <div id="order"></div>
+
+  <h2>Graph:</h2>
+  <div id="graph-container">
+    <div id="graph"></div>
+    <svg id="edges"></svg>
+  </div>
+
+  <script>
+    async function runTopo() {
+      const input = document.getElementById('input').value.trim().split('\n');
+      const [n, m] = input[0].split(' ').map(Number);
+      const adj = Array.from({ length: n }, () => []);
+      const indeg = Array(n).fill(0);
+      const edges = [];
+      const visual = document.getElementById('visual');
+      const orderDiv = document.getElementById('order');
+      const graphDiv = document.getElementById('graph');
+      const svg = document.getElementById('edges');
+
+      visual.innerHTML = '';
+      orderDiv.innerHTML = '';
+      graphDiv.innerHTML = '';
+      svg.innerHTML = '';
+
+      for (let i = 1; i <= m; i++) {
+        const [u, v] = input[i].split(' ').map(Number);
+        adj[u].push(v);
+        indeg[v]++;
+        edges.push([u, v]);
+      }
+
+      const nodes = [];
+      for (let i = 0; i < n; i++) {
+        const div = document.createElement('div');
+        div.className = 'node';
+        div.id = `node-${i}`;
+        div.textContent = i;
+        visual.appendChild(div);
+        nodes.push(div);
+      }
+
+      const delay = ms => new Promise(res => setTimeout(res, ms));
+
+      const queue = [];
+      for (let i = 0; i < n; i++) {
+        if (indeg[i] === 0) {
+          queue.push(i);
+          nodes[i].classList.add('queued');
+        }
+      }
+
+      await delay(1000);
+
+      const result = [];
+      while (queue.length > 0) {
+        const u = queue.shift();
+        nodes[u].classList.remove('queued');
+        nodes[u].classList.add('visited');
+
+        result.push(u);
+
+        const sortedNode = document.createElement('div');
+        sortedNode.className = 'node sorted';
+        sortedNode.textContent = u;
+        orderDiv.appendChild(sortedNode);
+
+        await delay(1000);
+
+        for (const v of adj[u]) {
+          indeg[v]--;
+          if (indeg[v] === 0) {
+            queue.push(v);
+            nodes[v].classList.add('queued');
+          }
+        }
+        await delay(500);
+      }
+
+      if (result.length !== n) {
+        orderDiv.innerHTML = '<p style="color:#f44336; font-weight:600;">Cycle detected. Topological sort not possible.</p>';
+      }
+
+      // Draw graph nodes
+      const graphNodes = [];
+      const positions = [];
+      for (let i = 0; i < n; i++) {
+        const gNode = document.createElement('div');
+        gNode.className = 'graph-node';
+        gNode.textContent = i;
+        graphDiv.appendChild(gNode);
+        graphNodes.push(gNode);
+      }
+
+      await delay(100);
+
+      const bbox = graphDiv.getBoundingClientRect();
+      const centerX = bbox.width / 2;
+      const centerY = bbox.height / 2;
+      const radius = Math.min(centerX, centerY) - 60;
+
+      for (let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        graphNodes[i].style.left = `${x - 22}px`;
+        graphNodes[i].style.top = `${y - 22}px`;
+        positions[i] = { x, y };
+      }
+
+      // Setup arrow marker defs
+      const ns = 'http://www.w3.org/2000/svg';
+      const marker = document.createElementNS(ns, 'marker');
+      marker.setAttribute('id', 'arrowhead');
+      marker.setAttribute('markerWidth', '10');
+      marker.setAttribute('markerHeight', '7');
+      marker.setAttribute('refX', '10');
+      marker.setAttribute('refY', '3.5');
+      marker.setAttribute('orient', 'auto');
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M0,0 L10,3.5 L0,7 Z');
+      path.setAttribute('fill', '#ffeb3b');
+      marker.appendChild(path);
+
+      const defs = document.createElementNS(ns, 'defs');
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+
+      // Draw edges
+      for (const [u, v] of edges) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', positions[u].x);
+        line.setAttribute('y1', positions[u].y);
+        line.setAttribute('x2', positions[v].x);
+        line.setAttribute('y2', positions[v].y);
+        line.classList.add('edge');
+        line.setAttribute('marker-end', 'url(#arrowhead)');
+        svg.appendChild(line);
+      }
+    }
+  </script>
+</body>
+</html>

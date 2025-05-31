@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Graph Input & Visualization</title>
+<style>
+  body {
+    margin: 0;
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e2f;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  a {
+    color: #72c0f9;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+
+  h1 {
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+
+  .controls {
+    background-color: #29294d;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    width: 420px;
+    box-shadow: 0 0 8px rgba(114, 192, 249, 0.5);
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    font-weight: 600;
+  }
+
+  input[type="number"] {
+    width: 60px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #222240;
+    color: #f0f0f0;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  .edge-inputs {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .edge-inputs input[type="number"] {
+    flex: 1;
+  }
+
+  button {
+    background-color: #72c0f9;
+    border: none;
+    padding: 0.7rem;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #1e1e2f;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #559ed9;
+  }
+
+  #graph-container {
+    position: relative;
+    width: 500px;
+    height: 400px;
+    border-radius: 8px;
+    background-color: #29294d;
+    box-shadow: 0 0 15px rgba(114, 192, 249, 0.4);
+    margin-bottom: 2rem;
+  }
+
+  #graph {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .graph-node {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    background-color: #72c0f9;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #1e1e2f;
+    box-shadow: 0 0 8px #72c0f9;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 500px;
+    height: 400px;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .edge {
+    stroke: #ffeb3b;
+    stroke-width: 2;
+    marker-end: url(#arrowhead);
+    opacity: 0.8;
+    transition: stroke 0.3s ease;
+  }
+</style>
+</head>
+<body>
+  <a href="index.html">← Back to Home</a>
+  <h1>Graph Input & Visualization</h1>
+
+  <div class="controls" id="controls">
+    <div>
+      <label for="nodes-count">Number of nodes (n): </label>
+      <input id="nodes-count" type="number" min="1" max="15" value="6" />
+      &nbsp;&nbsp;
+      <label for="edges-count">Number of edges (m): </label>
+      <input id="edges-count" type="number" min="0" max="30" value="6" />
+    </div>
+
+    <div id="edges-inputs">
+      <!-- Edge inputs will be generated here -->
+    </div>
+
+    <button id="run-btn">Visualize Graph</button>
+  </div>
+
+  <div id="graph-container">
+    <div id="graph"></div>
+    <svg id="edges"></svg>
+  </div>
+
+<script>
+  const nodesInput = document.getElementById('nodes-count');
+  const edgesInput = document.getElementById('edges-count');
+  const edgesInputsDiv = document.getElementById('edges-inputs');
+  const runBtn = document.getElementById('run-btn');
+  const graphDiv = document.getElementById('graph');
+  const svg = document.getElementById('edges');
+
+  function createEdgeInputs(m) {
+    edgesInputsDiv.innerHTML = '';
+    for(let i = 0; i < m; i++) {
+      const edgeDiv = document.createElement('div');
+      edgeDiv.className = 'edge-inputs';
+      edgeDiv.innerHTML = `
+        <label>Edge ${i + 1}:</label>
+        <input type="number" min="0" max="${nodesInput.value - 1}" value="0" class="edge-u" />
+        <input type="number" min="0" max="${nodesInput.value - 1}" value="1" class="edge-v" />
+      `;
+      edgesInputsDiv.appendChild(edgeDiv);
+    }
+  }
+
+  // Initialize edge inputs
+  createEdgeInputs(parseInt(edgesInput.value));
+
+  // Update edge inputs when number of edges changes
+  edgesInput.addEventListener('change', () => {
+    let m = parseInt(edgesInput.value);
+    if(m > 30) m = 30;
+    if(m < 0) m = 0;
+    edgesInput.value = m;
+    createEdgeInputs(m);
+  });
+
+  // Also update max attribute of edge inputs if n changes
+  nodesInput.addEventListener('change', () => {
+    let n = parseInt(nodesInput.value);
+    if(n > 15) n = 15;
+    if(n < 1) n = 1;
+    nodesInput.value = n;
+    // Update max attr on edge inputs
+    const edgeUs = document.querySelectorAll('.edge-u');
+    const edgeVs = document.querySelectorAll('.edge-v');
+    edgeUs.forEach(input => input.max = n - 1);
+    edgeVs.forEach(input => input.max = n - 1);
+  });
+
+  function clearGraph() {
+    graphDiv.innerHTML = '';
+    svg.innerHTML = '';
+  }
+
+  function drawGraph(n, edges) {
+    clearGraph();
+
+    const nodes = [];
+    for(let i=0; i<n; i++) {
+      const node = document.createElement('div');
+      node.className = 'graph-node';
+      node.textContent = i;
+      graphDiv.appendChild(node);
+      nodes.push(node);
+    }
+
+    const bbox = graphDiv.getBoundingClientRect();
+    const centerX = bbox.width / 2;
+    const centerY = bbox.height / 2;
+    const radius = Math.min(centerX, centerY) - 60;
+
+    const positions = [];
+    for(let i=0; i<n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      nodes[i].style.left = `${x - 22}px`;
+      nodes[i].style.top = `${y - 22}px`;
+      positions[i] = { x, y };
+    }
+
+    // Setup arrow marker defs
+    const ns = 'http://www.w3.org/2000/svg';
+    const marker = document.createElementNS(ns, 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '10');
+    marker.setAttribute('markerHeight', '7');
+    marker.setAttribute('refX', '10');
+    marker.setAttribute('refY', '3.5');
+    marker.setAttribute('orient', 'auto');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M0,0 L10,3.5 L0,7 Z');
+    path.setAttribute('fill', '#ffeb3b');
+    marker.appendChild(path);
+
+    const defs = document.createElementNS(ns, 'defs');
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Draw edges
+    for(const [u,v] of edges) {
+      const line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', positions[u].x);
+      line.setAttribute('y1', positions[u].y);
+      line.setAttribute('x2', positions[v].x);
+      line.setAttribute('y2', positions[v].y);
+      line.classList.add('edge');
+      line.setAttribute('marker-end', 'url(#arrowhead)');
+      svg.appendChild(line);
+    }
+  }
+
+  runBtn.addEventListener('click', () => {
+    const n = parseInt(nodesInput.value);
+    const m = parseInt(edgesInput.value);
+
+    if(n < 1 || n > 15) {
+      alert('Number of nodes must be between 1 and 15');
+      return;
+    }
+    if(m < 0 || m > 30) {
+      alert('Number of edges must be between 0 and 30');
+      return;
+    }
+
+    const edges = [];
+    const edgeUs = document.querySelectorAll('.edge-u');
+    const edgeVs = document.querySelectorAll('.edge-v');
+
+    for(let i=0; i<m; i++) {
+      const u = parseInt(edgeUs[i].value);
+      const v = parseInt(edgeVs[i].value);
+      if(isNaN(u) || isNaN(v) || u < 0 || v < 0 || u >= n || v >= n) {
+        alert(`Edge ${i+1} has invalid nodes.`);
+        return;
+      }
+      edges.push([u,v]);
+    }
+
+    drawGraph(n, edges);
+  });
+</script>
+</body>
+</html>

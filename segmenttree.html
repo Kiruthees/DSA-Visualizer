@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Segment Tree Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: white;
+      font-family: sans-serif;
+    }
+    svg {
+      width: 100%;
+      height: 400px;
+      border: 1px solid white;
+      background: #1e293b;
+      margin-top: 10px;
+    }
+    circle {
+      fill: #334155;
+      stroke: white;
+      stroke-width: 2px;
+    }
+    text {
+      fill: white;
+      font-size: 14px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      user-select: none;
+    }
+    line {
+      stroke: white;
+      stroke-width: 2px;
+    }
+    
+    input:focus{
+        outline: 2px solid #3b82f6;
+        color:black;
+    }
+    button {
+      color: black;
+    }
+    
+
+  </style>
+</head>
+<body class="p-6">
+  <h1 class="text-3xl font-bold mb-4">Segment Tree Visualizer (Range Sum)</h1>
+
+  <div class="mb-4 space-y-2 max-w-xl">
+    <label>Enter array (comma separated):</label><br />
+    <input id="arrayInput" type="text" class="px-3 py-2 rounded w-full" placeholder="e.g. 2,1,5,3,4" style="color: #1e293b;"/>
+    <button onclick="build()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Build Segment Tree</button>
+  </div>
+
+  <div class="flex gap-4 mb-4 max-w-xl">
+  <div class="flex items-center space-x-2">
+    <input id="queryLeft" type="number" placeholder="Left index" class="px-3 py-2 rounded w-24" style="color: #1e293b;"/>
+    <input id="queryRight" type="number" placeholder="Right index" class="px-3 py-2 rounded w-24" style="color: #1e293b;"/>
+    <button onclick="queryRange()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Query</button>
+  </div>
+  <div class="flex items-center space-x-2">
+    <input id="updateIndex" type="number" placeholder="Index" class="px-3 py-2 rounded w-24" style="color: #1e293b;"/>
+    <input id="updateValue" type="number" placeholder="Value" class="px-3 py-2 rounded w-24" style="color: #1e293b;"/>
+    <button onclick="updateValue()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">Update</button>
+  </div>
+</div>
+
+
+  <div id="queryResult" class="mb-4 font-bold"></div>
+
+  <svg id="tree"></svg>
+
+  <script>
+    let arr = [];
+    let segtree = [];
+    let n = 0;
+
+    function buildSegmentTree(index, left, right) {
+      if (left === right) {
+        segtree[index] = arr[left];
+        return segtree[index];
+      }
+      const mid = Math.floor((left + right) / 2);
+      const leftSum = buildSegmentTree(2 * index + 1, left, mid);
+      const rightSum = buildSegmentTree(2 * index + 2, mid + 1, right);
+      segtree[index] = leftSum + rightSum;
+      return segtree[index];
+    }
+
+    function build() {
+      const input = document.getElementById("arrayInput").value;
+      arr = input.split(",").map(s => parseInt(s.trim())).filter(x => !isNaN(x));
+      if (arr.length === 0) {
+        alert("Enter a valid array");
+        return;
+      }
+      n = arr.length;
+      segtree = new Array(4 * n).fill(0);
+      buildSegmentTree(0, 0, n - 1);
+      drawTree();
+      document.getElementById("queryResult").textContent = "";
+    }
+
+    function querySegmentTree(index, left, right, ql, qr) {
+      if (qr < left || ql > right) return 0; // no overlap
+      if (ql <= left && right <= qr) return segtree[index]; // total overlap
+      const mid = Math.floor((left + right) / 2);
+      return querySegmentTree(2 * index + 1, left, mid, ql, qr) +
+             querySegmentTree(2 * index + 2, mid + 1, right, ql, qr);
+    }
+
+    function queryRange() {
+      const ql = parseInt(document.getElementById("queryLeft").value);
+      const qr = parseInt(document.getElementById("queryRight").value);
+      if (isNaN(ql) || isNaN(qr) || ql < 0 || qr >= n || ql > qr) {
+        alert("Enter a valid query range");
+        return;
+      }
+      const result = querySegmentTree(0, 0, n - 1, ql, qr);
+      document.getElementById("queryResult").textContent = `Sum of range [${ql}, ${qr}] = ${result}`;
+    }
+
+    function updateSegmentTree(index, left, right, updateIdx, value) {
+      if (updateIdx < left || updateIdx > right) return;
+      if (left === right) {
+        segtree[index] = value;
+        arr[updateIdx] = value;
+        return;
+      }
+      const mid = Math.floor((left + right) / 2);
+      updateSegmentTree(2 * index + 1, left, mid, updateIdx, value);
+      updateSegmentTree(2 * index + 2, mid + 1, right, updateIdx, value);
+      segtree[index] = segtree[2 * index + 1] + segtree[2 * index + 2];
+    }
+
+    function updateValue() {
+      const idx = parseInt(document.getElementById("updateIndex").value);
+      const val = parseInt(document.getElementById("updateValue").value);
+      if (isNaN(idx) || isNaN(val) || idx < 0 || idx >= n) {
+        alert("Enter valid update index and value");
+        return;
+      }
+      updateSegmentTree(0, 0, n - 1, idx, val);
+      drawTree();
+      document.getElementById("queryResult").textContent = "";
+    }
+
+    function setCoords(index, left, right, depth, xMin, xMax, nodes) {
+      const x = (xMin + xMax) / 2;
+      const y = depth * 70 + 40;
+      nodes[index] = { x, y, val: segtree[index], left, right };
+
+      if (left === right) return;
+
+      const mid = Math.floor((left + right) / 2);
+      setCoords(2 * index + 1, left, mid, depth + 1, xMin, x - 20, nodes);
+      setCoords(2 * index + 2, mid + 1, right, depth + 1, x + 20, xMax, nodes);
+    }
+
+    function drawTree() {
+      const svg = document.getElementById("tree");
+      svg.innerHTML = "";
+      if (n === 0) return;
+
+      let nodes = [];
+      setCoords(0, 0, n - 1, 0, 20, svg.clientWidth - 20, nodes);
+
+      // Draw edges
+      for (let i = 0; i < nodes.length; i++) {
+        if (!nodes[i]) continue;
+        const node = nodes[i];
+        if (node.left !== node.right) {
+          let leftIndex = 2 * i + 1;
+          let rightIndex = 2 * i + 2;
+          if (nodes[leftIndex]) {
+            svg.appendChild(createLine(node.x, node.y, nodes[leftIndex].x, nodes[leftIndex].y));
+          }
+          if (nodes[rightIndex]) {
+            svg.appendChild(createLine(node.x, node.y, nodes[rightIndex].x, nodes[rightIndex].y));
+          }
+        }
+      }
+
+      // Draw nodes
+      for (let i = 0; i < nodes.length; i++) {
+        if (!nodes[i]) continue;
+        svg.appendChild(createCircle(nodes[i].x, nodes[i].y));
+        svg.appendChild(createText(nodes[i].x, nodes[i].y, nodes[i].val));
+      }
+    }
+
+    function createCircle(x, y) {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", x);
+      c.setAttribute("cy", y);
+      c.setAttribute("r", 20);
+      return c;
+    }
+
+    function createText(x, y, text) {
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("x", x);
+      t.setAttribute("y", y);
+      t.textContent = text;
+      return t;
+    }
+
+    function createLine(x1, y1, x2, y2) {
+      const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      l.setAttribute("x1", x1);
+      l.setAttribute("y1", y1);
+      l.setAttribute("x2", x2);
+      l.setAttribute("y2", y2);
+      return l;
+    }
+  </script>
+</body>
+</html>

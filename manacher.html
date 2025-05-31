@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manacher's Algorithm Visualizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background-color: #111827;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    color: #3b82f6;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  p.desc {
+    max-width: 700px;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  input[type="text"] {
+    background-color: white;
+    color: black;
+    border: 2px solid #3b82f6;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 1.2rem;
+    width: 28rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 8px #2563eb;
+  }
+  button {
+    background-color: #ef4444;
+    color: white;
+    padding: 0.6rem 1.75rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 1.2rem;
+    margin-left: 0.75rem;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #dc2626;
+  }
+  button:disabled {
+    background-color: #a1a1aa;
+    cursor: not-allowed;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .string-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .char-box {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #3b82f6;
+    margin: 0 3px;
+    font-size: 1.5rem;
+    color: #3b82f6;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    user-select: none;
+    position: relative;
+  }
+  .char-box.center {
+    background-color: #3b82f6;
+    color: #111827;
+    font-weight: 900;
+  }
+  .p-array {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .p-box {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #f87171;
+    margin: 0 3px;
+    font-size: 1.3rem;
+    color: #f87171;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    user-select: none;
+    position: relative;
+  }
+  .p-box.updated {
+    background-color: #f87171;
+    color: #111827;
+    font-weight: 900;
+  }
+  .info {
+    margin-top: 2rem;
+    max-width: 700px;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  .note {
+    margin-top: 1rem;
+    color: #fbbf24;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <h1 class="text-4xl font-bold text-cyan-400 mb-4">Manacher's Algorithm Visualizer</h1>
+  <p class="desc">Enter a string to visualize Manacher's Algorithm computing the array of palindrome radii centered at each position (including centers between characters).</p>
+
+  <div class="container">
+    <div>
+      <input type="text" id="inputString" placeholder="Enter a string, e.g. abacaba" />
+      <button id="startBtn" onclick="startManacher()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Search</button>
+      <button id="resetBtn" onclick="resetVisualizer()" class="bg-red-600 hover:bg-gray-700 px-4 py-2 rounded">Reset</button>
+    </div>
+
+    <div class="string-container" id="stringContainer"></div>
+    <div class="p-array" id="pArrayContainer"></div>
+    <div class="info" id="infoText"></div>
+    <div class="note">Note: The string is preprocessed by inserting '#' between characters and at both ends to handle even length palindromes.</div>
+  </div>
+
+<script>
+  const inputString = document.getElementById('inputString');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const stringContainer = document.getElementById('stringContainer');
+  const pArrayContainer = document.getElementById('pArrayContainer');
+  const infoText = document.getElementById('infoText');
+
+  let s = '';
+  let t = '';  // Preprocessed string with # between chars
+  let p = [];
+  let c = 0; // center of current rightmost palindrome
+  let r = 0; // right boundary of current rightmost palindrome
+  let i = 0;
+  let interval = null;
+
+  function preprocess(str) {
+    let res = '#';
+    for (let ch of str) {
+      res += ch + '#';
+    }
+    return res;
+  }
+
+  function renderString(centerIndex = -1) {
+    stringContainer.innerHTML = '';
+    for (let idx = 0; idx < t.length; idx++) {
+      const div = document.createElement('div');
+      div.textContent = t[idx];
+      div.className = 'char-box';
+      if (idx === centerIndex) {
+        div.classList.add('center');
+      }
+      stringContainer.appendChild(div);
+    }
+  }
+
+  function renderPArray(updatedIndex = -1) {
+    pArrayContainer.innerHTML = '';
+    for (let idx = 0; idx < p.length; idx++) {
+      const div = document.createElement('div');
+      div.textContent = p[idx];
+      div.className = 'p-box';
+      if (idx === updatedIndex) {
+        div.classList.add('updated');
+      }
+      pArrayContainer.appendChild(div);
+    }
+  }
+
+  function info(message) {
+    infoText.textContent = message;
+  }
+
+  function resetVisualizer() {
+    clearInterval(interval);
+    c = 0; r = 0; i = 0;
+    p = [];
+    t = '';
+    renderString();
+    renderPArray();
+    info('Reset done. Enter a string and click Start.');
+    startBtn.disabled = false;
+    resetBtn.disabled = true;
+    inputString.disabled = false;
+  }
+
+  async function startManacher() {
+    s = inputString.value.trim();
+    if (s.length === 0) {
+      alert('Please enter a non-empty string');
+      return;
+    }
+    startBtn.disabled = true;
+    inputString.disabled = true;
+    resetBtn.disabled = false;
+
+    t = preprocess(s);
+    p = new Array(t.length).fill(0);
+    c = 0; r = 0; i = 0;
+
+    renderString();
+    renderPArray();
+    info('Starting Manacher\'s Algorithm computation...');
+
+    for (i = 0; i < t.length; i++) {
+      renderString(i);
+      await sleep(700);
+
+      let mirror = 2 * c - i;
+      if (i < r) {
+        p[i] = Math.min(r - i, p[mirror]);
+        info(`At i=${i}, inside palindrome [c=${c}, r=${r}], set p[i] = min(r - i, p[mirror]) = ${p[i]}`);
+      } else {
+        p[i] = 0;
+        info(`At i=${i}, outside current palindrome, start with p[i] = 0`);
+      }
+      renderPArray(i);
+      await sleep(700);
+
+      while (i + p[i] + 1 < t.length && i - p[i] - 1 >= 0 && t[i + p[i] + 1] === t[i - p[i] - 1]) {
+        p[i]++;
+        info(`Expanding palindrome at i=${i}: p[i] increased to ${p[i]}`);
+        renderPArray(i);
+        await sleep(500);
+      }
+
+      if (i + p[i] > r) {
+        c = i;
+        r = i + p[i];
+        info(`Updated center c=${c} and right boundary r=${r}`);
+      }
+      renderPArray(i);
+      await sleep(700);
+    }
+
+    info('Manacher\'s Algorithm computation completed.<br>Maximum palindrome radius: ' + Math.max(...p));
+    renderString(-1);
+    startBtn.disabled = false;
+    inputString.disabled = false;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+</script>
+</body>
+</html>

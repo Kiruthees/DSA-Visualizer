@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Insertion Sort Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f0f0f0;
+    }
+    .bar {
+      display: inline-block;
+      margin: 2px;
+      background-color: #38bdf8;
+      transition: height 0.3s, background-color 0.3s;
+    }
+    .bar.active {
+      background-color: #facc15;
+    }
+    .bar.sorted {
+      background-color: #4ade80;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <h1 class="text-3xl font-bold mb-6 text-center">Insertion Sort Visualizer</h1>
+    <p class="text-center text-gray-300 mb-6 max-w-3xl mx-auto">
+  Insertion Sort builds the final sorted array one item at a time by repeatedly picking the next element and inserting it into the correct position in the sorted portion.
+  <br />
+  <strong>Time Complexity:</strong> O(n²)
+</p>
+
+  <div class="flex justify-center gap-4 mb-6 flex-wrap">
+    <input
+      id="inputArray"
+      type="text"
+      placeholder="e.g. 7,3,9,1,2"
+      class="text-black px-4 py-2 rounded w-72"
+    />
+    <button
+      onclick="startSort()"
+      class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Sort
+    </button>
+    <button
+      onclick="reset()"
+      class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Reset
+    </button>
+  </div>
+
+  <div id="bars" class="flex justify-center items-end h-64 gap-1"></div>
+
+  <script>
+    let array = [];
+    const delay = 300;
+
+    function drawBars(arr, active = [], sorted = []) {
+      const container = document.getElementById('bars');
+      container.innerHTML = '';
+      const max = Math.max(...arr);
+      arr.forEach((val, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        if (active.includes(i)) bar.classList.add('active');
+        if (sorted.includes(i)) bar.classList.add('sorted');
+        bar.style.height = `${(val / max) * 100}%`;
+        bar.style.width = `${400 / arr.length}px`;
+        container.appendChild(bar);
+      });
+    }
+
+    async function insertionSort() {
+      const n = array.length;
+      for (let i = 1; i < n; i++) {
+        let key = array[i];
+        let j = i - 1;
+        while (j >= 0 && array[j] > key) {
+          array[j + 1] = array[j];
+          drawBars(array, [j, j + 1], [...Array(i).keys()]);
+          await new Promise(r => setTimeout(r, delay));
+          j--;
+        }
+        array[j + 1] = key;
+        drawBars(array, [j + 1], [...Array(i + 1).keys()]);
+        await new Promise(r => setTimeout(r, delay));
+      }
+      drawBars(array, [], [...Array(n).keys()]);
+    }
+
+    function startSort() {
+      const input = document.getElementById('inputArray').value;
+      if (!input.trim()) return;
+      array = input.split(',').map(Number).filter(n => !isNaN(n));
+      drawBars(array);
+      insertionSort();
+    }
+
+    function reset() {
+      array = [];
+      document.getElementById('inputArray').value = '';
+      document.getElementById('bars').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

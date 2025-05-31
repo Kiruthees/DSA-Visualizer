@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binary Tree Visualizer</title>
+  <script src="https://cdn.jsdelivr.net/npm/leader-line-new/leader-line.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7fcf7;
+    }
+    .tree-node {
+      background-color: #a5d6a7;
+      color: #1b5e20;
+      border-radius: 9999px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      position: absolute;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .tree-container {
+      position: relative;
+      height: 600px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<body class="p-6">
+  <div class="mb-4">
+    <a href="trees.html" class="text-green-700 hover:underline">← Back to Trees</a>
+  </div>
+  <h1 class="text-3xl font-semibold mb-4 text-green-800">Binary Tree Visualizer</h1>
+  <div class="mb-6">
+    <label for="treeInput" class="block mb-2 text-green-900">Enter values (comma separated):</label>
+    <input id="treeInput" type="text" class="border p-2 w-full rounded-md" placeholder="e.g., 1,2,3,null,4" />
+    <button onclick="generateTree()" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Generate</button>
+  </div>
+  <div class="tree-container" id="treeArea"></div>
+
+  <script>
+    let lines = [];
+
+    function clearLines() {
+      lines.forEach(line => line.remove());
+      lines = [];
+    }
+
+    function generateTree() {
+      clearLines();
+      const input = document.getElementById("treeInput").value;
+      const values = input.split(',').map(v => v.trim());
+      const treeArea = document.getElementById("treeArea");
+      treeArea.innerHTML = '';
+
+      const nodes = [];
+      const levelHeight = 80;
+      const width = treeArea.offsetWidth;
+
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] === 'null') {
+          nodes.push(null);
+          continue;
+        }
+
+        const node = document.createElement('div');
+        node.className = 'tree-node';
+        node.innerText = values[i];
+        treeArea.appendChild(node);
+        nodes.push(node);
+      }
+
+      function setPosition(index, depth, left, right) {
+        if (index >= values.length || !nodes[index]) return;
+
+        const node = nodes[index];
+        const x = (left + right) / 2;
+        const y = depth * levelHeight;
+        node.style.left = `${x}px`;
+        node.style.top = `${y}px`;
+
+        const leftIndex = 2 * index + 1;
+        const rightIndex = 2 * index + 2;
+
+        setPosition(leftIndex, depth + 1, left, x);
+        setPosition(rightIndex, depth + 1, x, right);
+      }
+
+      setPosition(0, 0, 0, width);
+
+      for (let i = 0; i < nodes.length; i++) {
+        if (!nodes[i]) continue;
+        const leftIndex = 2 * i + 1;
+        const rightIndex = 2 * i + 2;
+        if (nodes[leftIndex]) {
+          lines.push(new LeaderLine(nodes[i], nodes[leftIndex], { color: '#66bb6a', path: 'straight' }));
+        }
+        if (nodes[rightIndex]) {
+          lines.push(new LeaderLine(nodes[i], nodes[rightIndex], { color: '#66bb6a', path: 'straight' }));
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>

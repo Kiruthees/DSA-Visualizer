@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Floyd-Warshall Algorithm</title>
+<style>
+  body {
+    margin: 0;
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e2f;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  a {
+    color: #72c0f9;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  h1 {
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  .controls {
+    background-color: #29294d;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    width: 450px;
+    box-shadow: 0 0 8px rgba(114, 192, 249, 0.5);
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  textarea {
+    resize: none;
+    font-family: monospace;
+    font-size: 1rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #222240;
+    color: #f0f0f0;
+    height: 140px;
+    outline: none;
+  }
+  button {
+    background-color: #72c0f9;
+    border: none;
+    padding: 0.7rem;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #1e1e2f;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #559ed9;
+  }
+  #matrix-container {
+    overflow-x: auto;
+    max-width: 700px;
+    background-color: #29294d;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 0 12px rgba(114, 192, 249, 0.5);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    user-select: none;
+  }
+  th, td {
+    border: 1px solid #444466;
+    padding: 10px 14px;
+    text-align: center;
+    font-weight: 600;
+    color: #f0f0f0;
+    min-width: 40px;
+  }
+  th {
+    background-color: #444466;
+  }
+  td.updated {
+    background-color: #4caf50;
+    box-shadow: 0 0 10px #4caf50;
+  }
+  td.infinite {
+    color: #ff5555;
+  }
+  #message {
+    margin-top: 1rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    min-height: 1.4rem;
+    color: #f0ad4e; /* warm yellow */
+  }
+</style>
+</head>
+<body>
+
+<a href="index.html">← Back to Home</a>
+<h1>Floyd-Warshall Algorithm</h1>
+
+<div class="controls">
+  <p>Enter number of nodes (≤15) and adjacency matrix (use INF for no edge):</p>
+  <textarea id="input" placeholder="4\n0 3 INF 7\n8 0 2 INF\n5 INF 0 1\n2 INF INF 0">4
+0 3 INF 7
+8 0 2 INF
+5 INF 0 1
+2 INF INF 0</textarea>
+  <button onclick="runFloydWarshall()">Run</button>
+</div>
+
+<h2>Distance Matrix:</h2>
+<div id="matrix-container">
+  <table id="dist-matrix"></table>
+</div>
+
+<div id="message"></div>
+
+<script>
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function parseInput(text){
+  const lines = text.trim().split('\n');
+  if(lines.length < 1) return null;
+  const n = parseInt(lines[0]);
+  if(isNaN(n) || n <= 0 || n > 15) return null;
+
+  const matrix = [];
+  for(let i=1; i<=n; i++){
+    if(!lines[i]) return null;
+    const row = lines[i].split(/\s+/);
+    if(row.length !== n) return null;
+    matrix.push(row.map(x => (x.toUpperCase() === 'INF' ? Infinity : Number(x))));
+  }
+  return {n, matrix};
+}
+
+function createTable(n, matrix, updatedCell = null){
+  const table = document.getElementById('dist-matrix');
+  table.innerHTML = '';
+  const headerRow = document.createElement('tr');
+  const emptyTH = document.createElement('th');
+  emptyTH.textContent = '';
+  headerRow.appendChild(emptyTH);
+  for(let i=0; i<n; i++){
+    const th = document.createElement('th');
+    th.textContent = i;
+    headerRow.appendChild(th);
+  }
+  table.appendChild(headerRow);
+
+  for(let i=0; i<n; i++){
+    const tr = document.createElement('tr');
+    const th = document.createElement('th');
+    th.textContent = i;
+    tr.appendChild(th);
+    for(let j=0; j<n; j++){
+      const td = document.createElement('td');
+      if(matrix[i][j] === Infinity){
+        td.textContent = '∞';
+        td.classList.add('infinite');
+      } else {
+        td.textContent = matrix[i][j];
+      }
+      if(updatedCell && updatedCell[0] === i && updatedCell[1] === j){
+        td.classList.add('updated');
+      }
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+}
+
+async function runFloydWarshall(){
+  const inputText = document.getElementById('input').value;
+  const data = parseInput(inputText);
+  const msgDiv = document.getElementById('message');
+
+  if(!data){
+    alert('Invalid input format. First line: n (number of nodes). Next n lines: adjacency matrix with numbers or INF.');
+    return;
+  }
+
+  const {n, matrix} = data;
+
+  msgDiv.textContent = '';
+  createTable(n, matrix);
+
+  for(let k=0; k<n; k++){
+    msgDiv.textContent = `Using intermediate node k = ${k}`;
+    for(let i=0; i<n; i++){
+      for(let j=0; j<n; j++){
+        if(matrix[i][k] === Infinity || matrix[k][j] === Infinity) continue;
+        if(matrix[i][j] > matrix[i][k] + matrix[k][j]){
+          matrix[i][j] = matrix[i][k] + matrix[k][j];
+          createTable(n, matrix, [i,j]);
+          await delay(800);
+        }
+      }
+    }
+  }
+  msgDiv.textContent = 'Completed Floyd-Warshall. Shortest paths computed.';
+}
+</script>
+
+</body>
+</html>

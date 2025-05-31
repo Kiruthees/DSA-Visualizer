@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lowest Common Ancestor Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: white;
+    }
+    svg {
+      width: 100%;
+      height: 600px;
+    }
+    circle {
+      fill: #3b82f6;
+      stroke: white;
+      stroke-width: 2px;
+    }
+    .highlight1 {
+      fill: #f43f5e;
+    }
+    .highlight2 {
+      fill: #f59e0b;
+    }
+    .lca {
+      fill: #22c55e;
+    }
+    text {
+      fill: white;
+      font-size: 14px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    line {
+      stroke: white;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <h1 class="text-3xl font-bold mb-4 text-cyan-400">Lowest Common Ancestor Visualizer</h1>
+  <div class="flex gap-4 mb-4">
+    <input id="node1" type="number" placeholder="Node 1" class="text-black px-3 py-2 rounded" />
+    <input id="node2" type="number" placeholder="Node 2" class="text-black px-3 py-2 rounded" />
+    <button onclick="visualizeLCA()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+      Visualize LCA
+    </button>
+  </div>
+  <svg id="tree"></svg>
+
+  <script>
+    class TreeNode {
+      constructor(val) {
+        this.val = val;
+        this.left = null;
+        this.right = null;
+        this.x = 0;
+        this.y = 0;
+      }
+    }
+
+    const root = new TreeNode(10);
+    root.left = new TreeNode(5);
+    root.right = new TreeNode(15);
+    root.left.left = new TreeNode(2);
+    root.left.right = new TreeNode(7);
+    root.right.left = new TreeNode(12);
+    root.right.right = new TreeNode(20);
+
+    function setCoords(node, depth, xMin, xMax) {
+      if (!node) return;
+      node.x = (xMin + xMax) / 2;
+      node.y = depth * 100 + 40;
+      setCoords(node.left, depth + 1, xMin, node.x - 20);
+      setCoords(node.right, depth + 1, node.x + 20, xMax);
+    }
+
+    function drawTree(highlight1, highlight2, lcaNode) {
+      const svg = document.getElementById("tree");
+      svg.innerHTML = "";
+      setCoords(root, 0, 50, 950);
+      drawEdges(svg, root);
+      drawNodes(svg, root, highlight1, highlight2, lcaNode);
+    }
+
+    function drawEdges(svg, node) {
+      if (node.left) {
+        svg.appendChild(createLine(node.x, node.y, node.left.x, node.left.y));
+        drawEdges(svg, node.left);
+      }
+      if (node.right) {
+        svg.appendChild(createLine(node.x, node.y, node.right.x, node.right.y));
+        drawEdges(svg, node.right);
+      }
+    }
+
+    function drawNodes(svg, node, h1, h2, lca) {
+      if (!node) return;
+      let cls = "";
+      if (node.val === h1) cls = "highlight1";
+      else if (node.val === h2) cls = "highlight2";
+      else if (node.val === lca) cls = "lca";
+      const circle = createCircle(node.x, node.y, cls);
+      const label = createText(node.x, node.y, node.val);
+      svg.appendChild(circle);
+      svg.appendChild(label);
+      drawNodes(svg, node.left, h1, h2, lca);
+      drawNodes(svg, node.right, h1, h2, lca);
+    }
+
+    function createCircle(x, y, cls = "") {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", x);
+      c.setAttribute("cy", y);
+      c.setAttribute("r", 20);
+      if (cls) c.setAttribute("class", cls);
+      return c;
+    }
+
+    function createText(x, y, text) {
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("x", x);
+      t.setAttribute("y", y);
+      t.textContent = text;
+      return t;
+    }
+
+    function createLine(x1, y1, x2, y2) {
+      const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      l.setAttribute("x1", x1);
+      l.setAttribute("y1", y1);
+      l.setAttribute("x2", x2);
+      l.setAttribute("y2", y2);
+      return l;
+    }
+
+    function findLCA(node, n1, n2) {
+      if (!node) return null;
+      if (node.val === n1 || node.val === n2) return node;
+      const left = findLCA(node.left, n1, n2);
+      const right = findLCA(node.right, n1, n2);
+      if (left && right) return node;
+      return left || right;
+    }
+
+    function visualizeLCA() {
+      const n1 = parseInt(document.getElementById("node1").value);
+      const n2 = parseInt(document.getElementById("node2").value);
+      if (!isNaN(n1) && !isNaN(n2)) {
+        const lca = findLCA(root, n1, n2);
+        drawTree(n1, n2, lca ? lca.val : null);
+      }
+    }
+
+    drawTree();
+  </script>
+</body>
+</html>

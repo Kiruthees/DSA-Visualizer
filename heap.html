@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Heap Sort Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .bar {
+      width: 40px;
+      height: 50px;
+      background-color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      border-radius: 8px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .bar.active {
+      background-color: #38bdf8;
+    }
+    .bar.sorted {
+      background-color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="text-4xl font-bold text-cyan-400 mb-4">Heap Sort Visualizer</h1>
+  <p class="text-center text-gray-300 max-w-xl mb-6">
+    Heap Sort builds a binary heap from the array and repeatedly extracts the maximum. This visualizer shows the heapify process and final sorting.<br />
+    <strong>Time Complexity:</strong> O(n log n)
+  </p>
+
+  <div>
+    <input type="text" id="inputArray" placeholder="e.g. 5,3,8,6,2" class="text-black px-3 py-2 rounded border border-cyan-400 w-64">
+    <button onclick="startHeapSort()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded ml-2">Start Sort</button>
+    <button onclick="resetArray()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded ml-2">Reset</button>
+  </div>
+
+  <div id="arrayContainer" class="flex gap-3 mt-8 flex-wrap justify-center min-h-[100px]"></div>
+
+  <script>
+    let array = [];
+    let container = document.getElementById('arrayContainer');
+    const delay = 600;
+
+    function renderArray(activeIndices = [], sortedIndex = null) {
+      container.innerHTML = '';
+      for (let i = 0; i < array.length; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('bar');
+        bar.textContent = array[i];
+        if (activeIndices.includes(i)) bar.classList.add('active');
+        if (sortedIndex !== null && i >= sortedIndex) bar.classList.add('sorted');
+        container.appendChild(bar);
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function heapify(n, i) {
+      let largest = i;
+      let l = 2 * i + 1;
+      let r = 2 * i + 2;
+
+      if (l < n && array[l] > array[largest]) largest = l;
+      if (r < n && array[r] > array[largest]) largest = r;
+
+      if (largest !== i) {
+        [array[i], array[largest]] = [array[largest], array[i]];
+        renderArray([i, largest]);
+        await sleep(delay);
+        await heapify(n, largest);
+      }
+    }
+
+    async function heapSort() {
+      const n = array.length;
+      for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+        await heapify(n, i);
+      }
+
+      for (let i = n - 1; i > 0; i--) {
+        [array[0], array[i]] = [array[i], array[0]];
+        renderArray([0, i], i);
+        await sleep(delay);
+        await heapify(i, 0);
+      }
+      renderArray([], 0);
+    }
+
+    async function startHeapSort() {
+      const input = document.getElementById('inputArray').value.trim();
+      array = input ? input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x)) : [5, 3, 8, 6, 2, 7];
+      if (array.length === 0) {
+        alert('Enter valid numbers separated by commas.');
+        return;
+      }
+      document.getElementById('inputArray').disabled = true;
+      renderArray();
+      await heapSort();
+      document.getElementById('inputArray').disabled = false;
+    }
+
+    function resetArray() {
+      document.getElementById('inputArray').value = '';
+      container.innerHTML = '';
+      array = [];
+    }
+
+    window.onload = () => {
+      array = [5, 3, 8, 6, 2, 7];
+      renderArray();
+    };
+  </script>
+</body>
+</html>

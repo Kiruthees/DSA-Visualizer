@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Longest Increasing Subsequence Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .box {
+      width: 50px;
+      height: 50px;
+      margin: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      border-radius: 0.5rem;
+    }
+    .normal {
+      background-color: #4b5563;
+      color: white;
+    }
+    .highlight {
+      background-color: #10b981;
+      color: white;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white p-6">
+  <h1 class="text-3xl text-cyan-400 font-bold text-center mb-6">LIS Visualizer</h1>
+
+  <div class="flex justify-center gap-4 mb-6">
+    <input id="inputArr" type="text" placeholder="e.g. 10,9,2,5,3,7,101,18"
+           class="w-96 p-2 rounded text-black border border-cyan-500 focus:outline-none" />
+    <button onclick="startLIS()"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+      Visualize
+    </button>
+  </div>
+
+  <div id="arrayContainer" class="flex flex-wrap justify-center mb-4"></div>
+  <div id="output" class="text-center text-lime-400 text-xl font-semibold"></div>
+
+  <script>
+    function getLIS(arr) {
+      const dp = Array(arr.length).fill(1);
+      const prev = Array(arr.length).fill(-1);
+      let maxLen = 1, lastIndex = 0;
+
+      for (let i = 1; i < arr.length; i++) {
+        for (let j = 0; j < i; j++) {
+          if (arr[i] > arr[j] && dp[j] + 1 > dp[i]) {
+            dp[i] = dp[j] + 1;
+            prev[i] = j;
+          }
+        }
+        if (dp[i] > maxLen) {
+          maxLen = dp[i];
+          lastIndex = i;
+        }
+      }
+
+      const lis = [];
+      while (lastIndex !== -1) {
+        lis.push(lastIndex);
+        lastIndex = prev[lastIndex];
+      }
+      return lis.reverse();
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function startLIS() {
+      const input = document.getElementById("inputArr").value.trim();
+      const arr = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+      if (arr.length === 0) {
+        alert("Please enter a valid sequence.");
+        return;
+      }
+
+      const container = document.getElementById("arrayContainer");
+      const output = document.getElementById("output");
+      container.innerHTML = "";
+      output.textContent = "";
+
+      const boxes = [];
+      for (let i = 0; i < arr.length; i++) {
+        const div = document.createElement("div");
+        div.className = "box normal";
+        div.textContent = arr[i];
+        container.appendChild(div);
+        boxes.push(div);
+      }
+
+      const lisIndices = getLIS(arr);
+      for (let idx of lisIndices) {
+        await sleep(500);
+        boxes[idx].classList.remove("normal");
+        boxes[idx].classList.add("highlight");
+      }
+
+      const lisValues = lisIndices.map(i => arr[i]);
+      output.textContent = `Length: ${lisValues.length}, LIS: [${lisValues.join(', ')}]`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Huffman Coding Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-6">
+  <h1 class="text-3xl font-bold text-cyan-400 mb-4 text-center">Huffman Coding Visualizer</h1>
+  <p class="text-center text-gray-300 mb-4">Enter characters and their frequencies (e.g., A:5,B:9,C:12,...)</p>
+
+  <div class="flex justify-center gap-4 mb-6">
+    <input id="inputFreq" type="text" placeholder="e.g. A:5,B:9,C:12"
+      class="p-2 w-80 text-black rounded border border-cyan-400 focus:outline-none">
+    <button onclick="startHuffman()" class="bg-cyan-600 px-4 py-2 rounded hover:bg-cyan-700">
+      Visualize
+    </button>
+  </div>
+
+  <div id="treeContainer" class="flex flex-wrap justify-center gap-4 mt-6"></div>
+
+  <script>
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+    class Node {
+      constructor(char, freq, left = null, right = null) {
+        this.char = char;
+        this.freq = freq;
+        this.left = left;
+        this.right = right;
+      }
+    }
+
+    function parseInput(input) {
+      return input.split(',').map(item => {
+        const [char, freq] = item.split(':');
+        return new Node(char.trim(), parseInt(freq.trim()));
+      }).filter(n => n.char && !isNaN(n.freq));
+    }
+
+    async function startHuffman() {
+      const input = document.getElementById("inputFreq").value;
+      let nodes = parseInput(input);
+      const container = document.getElementById("treeContainer");
+      container.innerHTML = '';
+
+      if (nodes.length < 2) {
+        alert("Enter at least 2 character-frequency pairs.");
+        return;
+      }
+
+      while (nodes.length > 1) {
+        nodes.sort((a, b) => a.freq - b.freq);
+        const left = nodes.shift();
+        const right = nodes.shift();
+        const newNode = new Node(null, left.freq + right.freq, left, right);
+        nodes.push(newNode);
+
+        // Visual Step
+        const div = document.createElement('div');
+        div.className = 'border border-green-500 rounded p-3 bg-gray-800';
+        div.innerHTML = `
+          <div class="text-lime-300 font-bold">Merged Node: ${newNode.freq}</div>
+          <div class="text-sm text-gray-300">Left: ${left.char ?? left.freq}, Right: ${right.char ?? right.freq}</div>
+        `;
+        container.appendChild(div);
+        await sleep(800);
+      }
+
+      const root = nodes[0];
+      const codes = {};
+      generateCodes(root, "", codes);
+
+      const resultDiv = document.createElement("div");
+      resultDiv.className = 'mt-4 text-center text-lime-400 font-bold';
+      resultDiv.textContent = "Huffman Codes: " + Object.entries(codes).map(([ch, code]) => `${ch}: ${code}`).join(", ");
+      container.appendChild(resultDiv);
+    }
+
+    function generateCodes(node, code, codes) {
+      if (!node) return;
+      if (node.char !== null) {
+        codes[node.char] = code;
+      }
+      generateCodes(node.left, code + "0", codes);
+      generateCodes(node.right, code + "1", codes);
+    }
+  </script>
+</body>
+</html>

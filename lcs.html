@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LCS Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .cell {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #9ca3af;
+      font-weight: bold;
+    }
+    .highlight {
+      background-color: #34d399;
+      color: black;
+    }
+    .dp-row {
+      display: flex;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white p-6">
+  <h1 class="text-3xl text-cyan-400 font-bold text-center mb-6">LCS Visualizer</h1>
+
+  <div class="flex justify-center gap-4 mb-6">
+    <input id="str1" type="text" placeholder="First string"
+           class="w-64 p-2 rounded text-black border border-cyan-500 focus:outline-none" />
+    <input id="str2" type="text" placeholder="Second string"
+           class="w-64 p-2 rounded text-black border border-cyan-500 focus:outline-none" />
+    <button onclick="startLCS()"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+      Visualize
+    </button>
+  </div>
+
+  <div id="dpTable" class="overflow-auto flex flex-col items-center mb-4"></div>
+  <div id="output" class="text-center text-lime-400 text-xl font-semibold"></div>
+
+  <script>
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function startLCS() {
+      const s1 = document.getElementById("str1").value.trim();
+      const s2 = document.getElementById("str2").value.trim();
+      const dpTable = document.getElementById("dpTable");
+      const output = document.getElementById("output");
+      dpTable.innerHTML = "";
+      output.textContent = "";
+
+      const m = s1.length, n = s2.length;
+      const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+      const cells = [];
+
+      // Create DP table grid
+      for (let i = 0; i <= m; i++) {
+        const row = document.createElement("div");
+        row.className = "dp-row";
+        const cellRow = [];
+        for (let j = 0; j <= n; j++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.textContent = '0';
+          row.appendChild(cell);
+          cellRow.push(cell);
+        }
+        dpTable.appendChild(row);
+        cells.push(cellRow);
+      }
+
+      // Fill DP table with animation
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          await sleep(100);
+          if (s1[i - 1] === s2[j - 1]) {
+            dp[i][j] = dp[i - 1][j - 1] + 1;
+          } else {
+            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+          }
+          cells[i][j].textContent = dp[i][j];
+        }
+      }
+
+      // Trace back LCS
+      let i = m, j = n;
+      const lcsChars = [];
+      while (i > 0 && j > 0) {
+        if (s1[i - 1] === s2[j - 1]) {
+          cells[i][j].classList.add("highlight");
+          lcsChars.push(s1[i - 1]);
+          i--; j--;
+        } else if (dp[i - 1][j] > dp[i][j - 1]) {
+          i--;
+        } else {
+          j--;
+        }
+      }
+
+      output.textContent = `Length: ${dp[m][n]}, LCS: ${lcsChars.reverse().join('')}`;
+    }
+  </script>
+</body>
+</html>

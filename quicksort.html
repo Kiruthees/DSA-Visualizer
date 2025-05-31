@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Sort Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bar {
+      width: 30px;
+      margin: 0 3px;
+      display: inline-block;
+      vertical-align: bottom;
+      background-color: #3b82f6;
+      transition: all 0.3s ease;
+      color: white;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 4px;
+      cursor: default;
+    }
+    .bar.pivot {
+      background-color: #ef4444; /* Red */
+    }
+    .bar.compare {
+      background-color: #fbbf24; /* Yellow */
+    }
+    .bar.swap {
+      background-color: #10b981; /* Green */
+    }
+    .container {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-6 flex flex-col items-center">
+  <h1 class="text-4xl font-bold mb-6 text-cyan-400">Quick Sort Visualizer</h1>
+    <p class="text-center text-gray-300 mb-6 max-w-4xl mx-auto">
+    Quick Sort is a divide-and-conquer algorithm that selects a pivot element, partitions the array so that elements less than the pivot come before it and elements greater come after, then recursively sorts the subarrays.
+    <br />
+    <strong>Time Complexity:</strong> Average case O(n log n), worst case O(n²).
+  </p>
+  <div class="mb-4">
+    <input
+      id="inputArray"
+      type="text"
+      placeholder="Enter numbers separated by commas"
+      class="p-2 rounded text-black w-80"
+      value="8,3,7,4,9,2,6,5"
+    />
+    <button
+      onclick="startSort()"
+      class="ml-2 px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition"
+    >
+      Start Sort
+    </button>
+    <button
+      onclick="resetArray()"
+      class="ml-2 px-4 py-2 bg-gray-600 rounded hover:bg-gray-700 transition"
+    >
+      Reset
+    </button>
+  </div>
+
+  <div id="arrayContainer" class="container flex justify-center items-end min-h-[150px]"></div>
+
+  <script>
+    let array = [];
+    let delay = 600; // delay between operations
+    let steps = [];
+    let timer;
+
+    function createBars(arr) {
+      const container = document.getElementById("arrayContainer");
+      container.innerHTML = "";
+      for (let val of arr) {
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = val * 15 + "px";
+        bar.textContent = val;
+        container.appendChild(bar);
+      }
+    }
+
+    function swap(arr, i, j) {
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    // Quick Sort with steps to animate
+    function quickSort(arr, low, high) {
+      if (low < high) {
+        let pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+      }
+    }
+
+    function partition(arr, low, high) {
+      let pivot = arr[high];
+      steps.push({type: "pivot", index: high});
+      let i = low - 1;
+      for (let j = low; j < high; j++) {
+        steps.push({type: "compare", i: j, pivot: high});
+        if (arr[j] < pivot) {
+          i++;
+          steps.push({type: "swap", i, j});
+          swap(arr, i, j);
+        }
+      }
+      steps.push({type: "swap", i: i+1, j: high});
+      swap(arr, i + 1, high);
+      return i + 1;
+    }
+
+    function animate() {
+      if (steps.length === 0) {
+        enableButtons();
+        return;
+      }
+      const step = steps.shift();
+      const bars = document.getElementById("arrayContainer").children;
+      resetBarColors();
+
+      if (step.type === "pivot") {
+        bars[step.index].classList.add("pivot");
+      } else if (step.type === "compare") {
+        bars[step.i].classList.add("compare");
+        bars[step.pivot].classList.add("pivot");
+      } else if (step.type === "swap") {
+        bars[step.i].classList.add("swap");
+        bars[step.j].classList.add("swap");
+        // Swap heights and text
+        let tempHeight = bars[step.i].style.height;
+        let tempText = bars[step.i].textContent;
+        bars[step.i].style.height = bars[step.j].style.height;
+        bars[step.i].textContent = bars[step.j].textContent;
+        bars[step.j].style.height = tempHeight;
+        bars[step.j].textContent = tempText;
+      }
+      timer = setTimeout(animate, delay);
+    }
+
+    function resetBarColors() {
+      const bars = document.getElementById("arrayContainer").children;
+      for (let bar of bars) {
+        bar.classList.remove("pivot", "compare", "swap");
+      }
+    }
+
+    function startSort() {
+      disableButtons();
+      let input = document.getElementById("inputArray").value;
+      array = input.split(",").map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+      if(array.length === 0) {
+        alert("Please enter valid numbers separated by commas.");
+        enableButtons();
+        return;
+      }
+      createBars(array);
+      steps = [];
+      let arrCopy = array.slice();
+      quickSort(arrCopy, 0, arrCopy.length - 1);
+      animate();
+    }
+
+    function resetArray() {
+      clearTimeout(timer);
+      steps = [];
+      let input = document.getElementById("inputArray").value;
+      array = input.split(",").map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+      createBars(array);
+      enableButtons();
+    }
+
+    function disableButtons() {
+      document.querySelector("button[onclick='startSort()']").disabled = true;
+      document.querySelector("button[onclick='resetArray()']").disabled = true;
+      document.getElementById("inputArray").disabled = true;
+    }
+    function enableButtons() {
+      document.querySelector("button[onclick='startSort()']").disabled = false;
+      document.querySelector("button[onclick='resetArray()']").disabled = false;
+      document.getElementById("inputArray").disabled = false;
+    }
+
+    // Initial load bars
+    window.onload = () => {
+      array = [8,3,7,4,9,2,6,5];
+      createBars(array);
+    }
+  </script>
+</body>
+</html>

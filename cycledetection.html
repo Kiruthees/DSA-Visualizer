@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cycle Detection Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #1a202c;
+      color: white;
+      font-family: sans-serif;
+    }
+    .node {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      background-color: #4ade80;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 1.5rem;
+    }
+    .arrow {
+      width: 40px;
+      height: 2px;
+      background-color: white;
+      position: relative;
+      top: 30px;
+      left: -10px;
+    }
+    .pointer {
+      position: absolute;
+      bottom: -1.2rem;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .slow { color: #facc15; }
+    .fast { color: #60a5fa; }
+  </style>
+</head>
+<body class="p-6 flex flex-col items-center">
+  <h1 class="text-3xl font-bold text-cyan-400 mb-4">Floyd’s Cycle Detection Visualizer</h1>
+  <p class="text-gray-300 mb-4 text-center max-w-xl">
+    Enter the next indices for each node, separated by commas (e.g., <code>1,2,3,4,2</code>).<br>
+    This means node 0 points to 1, node 1 to 2, ..., node 4 to node 2 (forming a cycle).
+  </p>
+  <div class="flex gap-2 mb-6">
+    <input id="input" type="text" placeholder="e.g. 1,2,3,4,2"
+      class="p-2 w-72 text-black rounded border border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+    <button onclick="startCycleDetection()" class="bg-lime-500 hover:bg-lime-600 text-black px-4 py-2 rounded">
+      Start
+    </button>
+  </div>
+
+  <div id="list" class="flex items-center mb-6"></div>
+  <h2 id="result" class="text-xl font-semibold text-lime-400"></h2>
+
+  <script>
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function startCycleDetection() {
+      const input = document.getElementById("input").value.trim();
+      const nextIndices = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+      if (!nextIndices.length) return alert("Enter valid input");
+
+      const list = document.getElementById("list");
+      const result = document.getElementById("result");
+      result.textContent = '';
+      list.innerHTML = '';
+
+      const nodes = [];
+
+      // Create node elements
+      for (let i = 0; i < nextIndices.length; i++) {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.textContent = i;
+
+        const pointerSpan = document.createElement('div');
+        pointerSpan.className = 'pointer';
+        node.appendChild(pointerSpan);
+
+        list.appendChild(node);
+        nodes.push(node);
+
+        if (i < nextIndices.length - 1 || nextIndices[i] !== null) {
+          const arrow = document.createElement('div');
+          arrow.className = 'arrow';
+          list.appendChild(arrow);
+        }
+      }
+
+      // Floyd’s algorithm
+      let slow = 0, fast = 0;
+      const visited = new Set();
+
+      while (true) {
+        await sleep(600);
+        nodes.forEach(n => {
+          const p = n.querySelector('.pointer');
+          p.textContent = '';
+        });
+
+        if (slow >= nextIndices.length || fast >= nextIndices.length) break;
+
+        const slowPointer = nodes[slow]?.querySelector('.pointer');
+        if (slowPointer) {
+          slowPointer.textContent += 'S';
+          slowPointer.classList.add('slow');
+        }
+
+        fast = nextIndices[fast];
+        if (fast == null || fast >= nextIndices.length) break;
+        fast = nextIndices[fast];
+
+        if (fast == null || fast >= nextIndices.length) break;
+
+        slow = nextIndices[slow];
+
+        const fastPointer = nodes[fast]?.querySelector('.pointer');
+        if (fastPointer) {
+          fastPointer.textContent += 'F';
+          fastPointer.classList.add('fast');
+        }
+
+        if (slow === fast) {
+          result.textContent = `Cycle detected at node ${slow}`;
+          return;
+        }
+      }
+
+      result.textContent = "No cycle detected";
+    }
+  </script>
+</body>
+</html>

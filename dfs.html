@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DFS Visualizer - DSA Visualizer</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <style>
+    body {
+      padding: 1rem 2rem;
+      background-color: #1c1c1c;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    header a {
+      color: #00ffff;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      color: #00ffff;
+      margin-bottom: 0.5rem;
+    }
+    #description {
+      margin-bottom: 1rem;
+      color: #ccc;
+    }
+    #canvas-container {
+      position: relative;
+      border: 1px solid #333;
+      background-color: #121212;
+      border-radius: 1rem;
+      width: 700px;
+      height: 500px;
+      margin-bottom: 1rem;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background-color: #121212;
+      border-radius: 1rem;
+    }
+    #controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.6rem;
+      background-color: #009dff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #007acc;
+    }
+    #info {
+      color: #bbb;
+      font-size: 0.9rem;
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="graph.html">← Back to Graphs</a>
+    <h1>Depth-First Search (DFS) Visualizer</h1>
+  </header>
+
+  <div id="description">Add nodes by clicking inside the canvas (max 15). Then add edges by selecting nodes in order.</div>
+
+  <div id="canvas-container">
+    <canvas id="graphCanvas" width="700" height="500"></canvas>
+  </div>
+
+  <div id="controls">
+    <button id="startBtn" disabled>Start DFS</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <div id="info">Click a node once to select the start node for an edge, then click another node to add the edge.</div>
+
+<script>
+  const canvas = document.getElementById('graphCanvas');
+  const ctx = canvas.getContext('2d');
+  const maxNodes = 15;
+  const nodeRadius = 20;
+
+  let nodes = [];
+  let edges = [];
+  let selectedNodeIndex = null;
+  let dfsOrder = [];
+  let animating = false;
+
+  function drawNode(x, y, index, color = '#b03060') { // medium dark pink
+    ctx.beginPath();
+    ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#ff79c6';
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(index, x, y);
+  }
+
+  function drawEdge(n1, n2, color = '#00ffff') { // cyan edges
+    ctx.beginPath();
+    ctx.moveTo(nodes[n1].x, nodes[n1].y);
+    ctx.lineTo(nodes[n2].x, nodes[n2].y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw edges first
+    for (let [a, b] of edges) {
+      drawEdge(a, b);
+      drawEdge(b, a);
+    }
+
+    // Draw nodes
+    for (let i = 0; i < nodes.length; i++) {
+      let color = '#b03060'; // default pink
+      if (animating) {
+        if (dfsOrder.includes(i)) {
+          color = '#ff69b4'; // visited pink
+        }
+        if (i === dfsOrder[currentStep]) {
+          color = '#00ffff'; // current cyan highlight
+        }
+      }
+      drawNode(nodes[i].x, nodes[i].y, i, color);
+    }
+  }
+
+  function getNodeAtPosition(x, y) {
+    for (let i = 0; i < nodes.length; i++) {
+      const dx = x - nodes[i].x;
+      const dy = y - nodes[i].y;
+      if (dx * dx + dy * dy <= nodeRadius * nodeRadius) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  // Add nodes on canvas click if less than maxNodes
+  canvas.addEventListener('click', (e) => {
+    if (animating) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const clickedNode = getNodeAtPosition(x, y);
+
+    if (clickedNode !== null) {
+      if (selectedNodeIndex === null) {
+        selectedNodeIndex = clickedNode;
+        drawSelection();
+      } else if (clickedNode !== selectedNodeIndex) {
+        // Add edge between selectedNodeIndex and clickedNode if not exist
+        if (!edges.some(edge => (edge[0] === selectedNodeIndex && edge[1] === clickedNode))) {
+          edges.push([selectedNodeIndex, clickedNode]);
+          edges.push([clickedNode, selectedNodeIndex]);
+        }
+        selectedNodeIndex = null;
+        redraw();
+        checkStartButton();
+      } else {
+        selectedNodeIndex = null;
+        redraw();
+      }
+    } else {
+      // Add new node if space available
+      if (nodes.length < maxNodes) {
+        nodes.push({x, y});
+        redraw();
+        checkStartButton();
+      }
+    }
+  });
+
+  function drawSelection() {
+    redraw();
+    if (selectedNodeIndex !== null) {
+      const n = nodes[selectedNodeIndex];
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, nodeRadius + 6, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#00ffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }
+
+  function checkStartButton() {
+    document.getElementById('startBtn').disabled = nodes.length === 0;
+  }
+
+  // DFS logic
+  let currentStep = 0;
+  let visited = [];
+  let adjacencyList = [];
+
+  function buildAdjList() {
+    adjacencyList = Array.from({length: nodes.length}, () => []);
+    for (let [a,b] of edges) {
+      adjacencyList[a].push(b);
+    }
+  }
+
+  function dfs(start) {
+    visited = new Array(nodes.length).fill(false);
+    dfsOrder = [];
+    function dfsUtil(u) {
+      visited[u] = true;
+      dfsOrder.push(u);
+      for (let v of adjacencyList[u]) {
+        if (!visited[v]) dfsUtil(v);
+      }
+    }
+    dfsUtil(start);
+  }
+
+  function animateDFS() {
+    if (currentStep >= dfsOrder.length) {
+      animating = false;
+      return;
+    }
+    redraw();
+    currentStep++;
+    setTimeout(animateDFS, 800);
+  }
+
+  // Start button event
+  document.getElementById('startBtn').addEventListener('click', () => {
+    if (animating) return;
+    if (nodes.length === 0) return;
+
+    buildAdjList();
+    dfs(0); // start from node 0
+    currentStep = 0;
+    animating = true;
+    animateDFS();
+  });
+
+  // Reset button event
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    nodes = [];
+    edges = [];
+    dfsOrder = [];
+    selectedNodeIndex = null;
+    animating = false;
+    currentStep = 0;
+    redraw();
+    checkStartButton();
+  });
+
+  redraw();
+  checkStartButton();
+</script>
+</body>
+</html>

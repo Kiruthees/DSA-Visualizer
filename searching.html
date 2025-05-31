@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Binary Search Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .box {
+      width: 50px;
+      height: 50px;
+      background-color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+    .low {
+      background-color: #fbbf24;
+    }
+    .mid {
+      background-color: #38bdf8;
+    }
+    .high {
+      background-color: #f87171;
+    }
+    .found {
+      background-color: #4ade80;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center px-4 py-10">
+  <h1 class="text-4xl font-bold text-cyan-400 mb-4">Binary Search Visualizer</h1>
+  <p class="text-gray-300 mb-6 text-center ">
+    Binary Search works on sorted arrays by repeatedly dividing the search interval in half.<br />
+    Time Complexity: <strong>O(log n)</strong>
+  </p>
+
+  <div class="flex flex-wrap justify-center gap-2 mb-6">
+    <input id="inputArray" type="text" placeholder="e.g. 1,2,3,4,5" class="px-3 py-2 rounded text-black w-64">
+    <input id="targetValue" type="number" placeholder="Target" class="px-3 py-2 rounded text-black w-24">
+    <button onclick="startSearch()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Search</button>
+    <button onclick="reset()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded">Reset</button>
+  </div>
+
+  <div id="arrayContainer" class="flex gap-3 flex-wrap justify-center min-h-[100px] mb-4"></div>
+  <p id="status" class="text-lg text-cyan-300"></p>
+
+  <script>
+    let array = [];
+    const delay = 800;
+    const container = document.getElementById('arrayContainer');
+    const status = document.getElementById('status');
+
+    function renderArray(low = -1, mid = -1, high = -1, found = -1) {
+      container.innerHTML = '';
+      array.forEach((val, idx) => {
+        const box = document.createElement('div');
+        box.className = 'box';
+        box.textContent = val;
+        if (idx === found) box.classList.add('found');
+        else if (idx === mid) box.classList.add('mid');
+        else if (idx === low) box.classList.add('low');
+        else if (idx === high) box.classList.add('high');
+        container.appendChild(box);
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    async function binarySearch(target) {
+      let low = 0, high = array.length - 1;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        renderArray(low, mid, high);
+        status.textContent = `Checking middle index ${mid}`;
+        await sleep(delay);
+        if (array[mid] === target) {
+          renderArray(-1, -1, -1, mid);
+          status.textContent = `Found ${target} at index ${mid}`;
+          return;
+        } else if (array[mid] < target) {
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      renderArray();
+      status.textContent = `${target} not found in the array.`;
+    }
+
+    async function startSearch() {
+      const input = document.getElementById('inputArray').value.trim();
+      const target = parseInt(document.getElementById('targetValue').value);
+      if (!input || isNaN(target)) {
+        alert("Enter valid array and target value");
+        return;
+      }
+      array = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+      array.sort((a, b) => a - b); // Ensure sorted
+      renderArray();
+      status.textContent = 'Starting binary search...';
+      await sleep(500);
+      await binarySearch(target);
+    }
+
+    function reset() {
+      array = [];
+      container.innerHTML = '';
+      status.textContent = '';
+      document.getElementById('inputArray').value = '';
+      document.getElementById('targetValue').value = '';
+    }
+  </script>
+</body>
+</html>

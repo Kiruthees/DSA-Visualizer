@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kruskal's Algorithm</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1e1e2f;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    a {
+      color: #72c0f9;
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      align-self: flex-start;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .controls {
+      background-color: #29294d;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      width: 400px;
+      box-shadow: 0 0 8px rgba(114, 192, 249, 0.5);
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    textarea {
+      resize: none;
+      font-family: monospace;
+      font-size: 1rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #222240;
+      color: #f0f0f0;
+      height: 120px;
+      outline: none;
+    }
+
+    button {
+      background-color: #72c0f9;
+      border: none;
+      padding: 0.7rem;
+      border-radius: 6px;
+      font-weight: 600;
+      color: #1e1e2f;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #559ed9;
+    }
+
+    #visual {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      min-height: 50px;
+    }
+
+    .node {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background-color: #444466;
+      color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      box-shadow: 0 0 8px transparent;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      user-select: none;
+    }
+
+    .node.in-mst {
+      background-color: #4caf50; /* green */
+      box-shadow: 0 0 12px #4caf50;
+    }
+    
+    .edge {
+      stroke: #ffeb3b;
+      stroke-width: 2;
+      opacity: 0.8;
+      transition: stroke 0.3s ease, stroke-width 0.3s ease;
+      marker-end: url(#arrowhead);
+    }
+
+    .edge.selected {
+      stroke: #4caf50;
+      stroke-width: 4;
+      opacity: 1;
+    }
+
+    #graph-container {
+      position: relative;
+      width: 500px;
+      height: 400px;
+      border-radius: 8px;
+      background-color: #29294d;
+      box-shadow: 0 0 15px rgba(114, 192, 249, 0.4);
+      margin-bottom: 2rem;
+    }
+
+    #graph {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-node {
+      position: absolute;
+      width: 45px;
+      height: 45px;
+      background-color: #72c0f9;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #1e1e2f;
+      box-shadow: 0 0 8px #72c0f9;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    #mst-edges {
+      margin-bottom: 1rem;
+      min-height: 40px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-weight: 600;
+    }
+
+  </style>
+</head>
+<body>
+  <a href="index.html">← Back to Home</a>
+  <h1>Kruskal's Algorithm</h1>
+
+  <div class="controls">
+    <p>Enter number of nodes (≤ 15) and edges. Each edge: u v w (undirected, w = weight)</p>
+    <textarea id="input" placeholder="5 7\n0 1 4\n0 2 2\n1 2 1\n1 3 5\n2 3 8\n2 4 10\n3 4 2"></textarea>
+    <button onclick="runKruskal()">Run</button>
+  </div>
+
+  <h2>Graph Visualization:</h2>
+  <div id="graph-container">
+    <div id="graph"></div>
+    <svg id="edges" width="500" height="400" style="position:absolute; top:0; left:0; pointer-events:none;"></svg>
+  </div>
+
+  <h2>Minimum Spanning Tree Edges:</h2>
+  <div id="mst-edges"></div>
+
+  <script>
+    function delay(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    class DSU {
+      constructor(n) {
+        this.parent = Array.from({ length: n }, (_, i) => i);
+        this.rank = new Array(n).fill(0);
+      }
+      find(x) {
+        if (this.parent[x] !== x) {
+          this.parent[x] = this.find(this.parent[x]);
+        }
+        return this.parent[x];
+      }
+      union(a, b) {
+        let rootA = this.find(a);
+        let rootB = this.find(b);
+        if (rootA === rootB) return false;
+        if (this.rank[rootA] < this.rank[rootB]) {
+          this.parent[rootA] = rootB;
+        } else if (this.rank[rootB] < this.rank[rootA]) {
+          this.parent[rootB] = rootA;
+        } else {
+          this.parent[rootB] = rootA;
+          this.rank[rootA]++;
+        }
+        return true;
+      }
+    }
+
+    async function runKruskal() {
+      const input = document.getElementById('input').value.trim().split('\n');
+      const [n, m] = input[0].split(' ').map(Number);
+      const edgesData = [];
+      for (let i = 1; i <= m; i++) {
+        const [u, v, w] = input[i].split(' ').map(Number);
+        edgesData.push({ u, v, w, index: i - 1 });
+      }
+      edgesData.sort((a, b) => a.w - b.w);
+
+      const graphDiv = document.getElementById('graph');
+      const svg = document.getElementById('edges');
+      const mstDiv = document.getElementById('mst-edges');
+      graphDiv.innerHTML = '';
+      svg.innerHTML = '';
+      mstDiv.innerHTML = '';
+
+      // Place nodes in circle
+      const graphNodes = [];
+      const positions = [];
+      const bbox = graphDiv.getBoundingClientRect();
+      const centerX = 250;
+      const centerY = 200;
+      const radius = 150;
+
+      for (let i = 0; i < n; i++) {
+        const gNode = document.createElement('div');
+        gNode.className = 'graph-node';
+        gNode.textContent = i;
+        graphDiv.appendChild(gNode);
+        graphNodes.push(gNode);
+      }
+
+      for (let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        graphNodes[i].style.left = `${x - 22}px`;
+        graphNodes[i].style.top = `${y - 22}px`;
+        positions[i] = { x, y };
+      }
+
+      // Draw all edges
+      const edgeElements = [];
+      const ns = 'http://www.w3.org/2000/svg';
+      for (const e of edgesData) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', positions[e.u].x);
+        line.setAttribute('y1', positions[e.u].y);
+        line.setAttribute('x2', positions[e.v].x);
+        line.setAttribute('y2', positions[e.v].y);
+        line.classList.add('edge');
+        line.setAttribute('data-index', e.index);
+        svg.appendChild(line);
+
+        // Add weight label
+        const text = document.createElementNS(ns, 'text');
+        const midX = (positions[e.u].x + positions[e.v].x) / 2;
+        const midY = (positions[e.u].y + positions[e.v].y) / 2;
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY - 5);
+        text.setAttribute('fill', '#f0f0f0');
+        text.setAttribute('font-size', '14');
+        text.setAttribute('font-weight', '600');
+        text.setAttribute('text-anchor', 'middle');
+        text.textContent = e.w;
+        svg.appendChild(text);
+
+        edgeElements.push(line);
+      }
+
+      const dsu = new DSU(n);
+      const mstEdges = [];
+
+      for (const e of edgesData) {
+        // Highlight current edge
+        for (const line of edgeElements) line.classList.remove('selected');
+        edgeElements[e.index].classList.add('selected');
+
+        await delay(1000);
+
+        if (dsu.union(e.u, e.v)) {
+          mstEdges.push(e);
+          edgeElements[e.index].classList.add('selected');
+          graphNodes[e.u].classList.add('in-mst');
+          graphNodes[e.v].classList.add('in-mst');
+
+          const edgeLabel = document.createElement('div');
+          edgeLabel.textContent = `${e.u} — ${e.v} (w=${e.w})`;
+          mstDiv.appendChild(edgeLabel);
+        } else {
+          edgeElements[e.index].classList.remove('selected');
+        }
+
+        await delay(800);
+      }
+    }
+  </script>
+</body>
+</html>

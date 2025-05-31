@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dijkstra Visualizer</title>
+<style>
+  body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
+  }
+  a {
+    color: #66d9ff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  h1, h2 {
+    color: #f8f8f2;
+    margin-bottom: 10px;
+  }
+
+  .controls {
+    margin-bottom: 1.5rem;
+  }
+  textarea {
+    width: 100%;
+    max-width: 600px;
+    background: #1e1e1e;
+    color: #cfcfcf;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 10px;
+    resize: vertical;
+  }
+  button {
+    background-color: #0057b7;
+    color: #f8f8f2;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 8px;
+  }
+  button:hover {
+    background-color: #6272a4;
+  }
+
+  #visual {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 650px;
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .node {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    margin: 6px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: #44475a;
+    color: #f8f8f2;
+    font-weight: 700;
+    position: relative;
+    user-select: none;
+    transition: background-color 0.4s ease;
+    box-shadow: 0 0 4px rgba(255,255,255,0.1);
+  }
+  .dist {
+    position: absolute;
+    bottom: -30px;
+    width: 100%;
+    font-size: 0.75rem;
+    color: #f1fa8c;
+    font-weight: 600;
+    user-select: none;
+  }
+
+  .visited { background-color: #50fa7b; color: #282828; }
+  .current { background-color: #8be9fd; color: #282828; }
+  .updated { background-color: #ff5555; color: #fff; }
+
+  #graph-container {
+    position: relative;
+    width: 640px;
+    height: 360px;
+    margin-bottom: 40px;
+  }
+  #graph {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #282a36;
+    border-radius: 10px;
+    box-shadow: inset 0 0 10px #44475a;
+  }
+
+  .graph-node {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #bd93f9;
+    color: #282828;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    user-select: none;
+    cursor: default;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 8px #bd93f9aa;
+  }
+  .graph-node.visited { background-color: #50fa7b; box-shadow: 0 0 10px #50fa7baa; color: #282828; }
+  .graph-node.current { background-color: #8be9fd; box-shadow: 0 0 10px #8be9fdcc; color: #282828; }
+  .graph-node.path { background-color: #ff79c6; box-shadow: 0 0 10px #ff79c6cc; color: #282828; }
+
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .edge {
+    stroke: #6272a4;
+    stroke-width: 2;
+    marker-end: url(#arrowhead);
+    transition: stroke 0.3s ease, stroke-width 0.3s ease;
+  }
+  .edge.highlight {
+    stroke: #8be9fd;
+    stroke-width: 4;
+  }
+
+  svg text {
+    fill: #f8f8f2;
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+    text-shadow: 0 0 2px #000000bb;
+  }
+</style>
+</head>
+<body>
+  <a href="index.html">← Back to Home</a>
+  <h1>Dijkstra Algorithm Visualizer</h1>
+  <div class="controls">
+    <p>Enter number of nodes (≤ 15) and edges. Each edge: u v w (directed u → v with weight w)</p>
+    <textarea id="input" rows="6" placeholder="n m\nu1 v1 w1\nu2 v2 w2\n..."></textarea><br />
+    <button onclick="runDijkstra()">Run</button>
+  </div>
+
+  <h2>Algorithm Visual:</h2>
+  <div id="visual"></div>
+
+  <h2>Graph:</h2>
+  <div id="graph-container">
+    <div id="graph"></div>
+    <svg id="edges"></svg>
+  </div>
+
+  <script>
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function runDijkstra() {
+      const input = document.getElementById('input').value.trim().split('\n');
+      if (input.length < 1) return alert('Please enter input');
+      const [n, m] = input[0].split(' ').map(Number);
+      if (n > 15) return alert('Max 15 nodes allowed');
+
+      const edges = [];
+      const adj = Array.from({ length: n }, () => []);
+      for (let i = 1; i <= m; i++) {
+        const [u, v, w] = input[i].split(' ').map(Number);
+        adj[u].push({ to: v, w });
+        edges.push([u, v, w]);
+      }
+
+      const visual = document.getElementById('visual');
+      const graphDiv = document.getElementById('graph');
+      const svg = document.getElementById('edges');
+      visual.innerHTML = '';
+      graphDiv.innerHTML = '';
+      svg.innerHTML = '';
+
+      const nodes = [];
+      for (let i = 0; i < n; i++) {
+        const div = document.createElement('div');
+        div.className = 'node';
+        div.textContent = i;
+        const distSpan = document.createElement('div');
+        distSpan.className = 'dist';
+        distSpan.textContent = '∞';
+        div.appendChild(distSpan);
+        visual.appendChild(div);
+        nodes.push({ div, distSpan });
+      }
+
+      const dist = Array(n).fill(Infinity);
+      const prev = Array(n).fill(null);
+      dist[0] = 0;
+      nodes[0].distSpan.textContent = '0';
+      nodes[0].div.classList.add('current');
+
+      const pq = [{ node: 0, dist: 0 }];
+
+      const positions = [];
+      const centerX = 300;
+      const centerY = 180;
+      const radius = 130;
+
+      for (let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'graph-node';
+        nodeDiv.style.left = `${x}px`;
+        nodeDiv.style.top = `${y}px`;
+        nodeDiv.textContent = i;
+        graphDiv.appendChild(nodeDiv);
+        positions[i] = { x: x + 22, y: y + 22 };
+      }
+
+      const ns = 'http://www.w3.org/2000/svg';
+      const marker = document.createElementNS(ns, 'marker');
+      marker.setAttribute('id', 'arrowhead');
+      marker.setAttribute('markerWidth', '10');
+      marker.setAttribute('markerHeight', '7');
+      marker.setAttribute('refX', '10');
+      marker.setAttribute('refY', '3.5');
+      marker.setAttribute('orient', 'auto');
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M0,0 L10,3.5 L0,7');
+      path.setAttribute('fill', '#6272a4');
+      marker.appendChild(path);
+      const defs = document.createElementNS(ns, 'defs');
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+
+      const edgeElements = [];
+      for (const [u, v, w] of edges) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', positions[u].x);
+        line.setAttribute('y1', positions[u].y);
+        line.setAttribute('x2', positions[v].x);
+        line.setAttribute('y2', positions[v].y);
+        line.setAttribute('class', 'edge');
+        line.setAttribute('marker-end', 'url(#arrowhead)');
+        svg.appendChild(line);
+
+        const midX = (positions[u].x + positions[v].x) / 2;
+        const midY = (positions[u].y + positions[v].y) / 2;
+        const text = document.createElementNS(ns, 'text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY - 8);
+        text.textContent = w;
+        svg.appendChild(text);
+
+        edgeElements.push({ from: u, to: v, element: line });
+      }
+
+      function extractMin() {
+        let minIndex = 0;
+        for (let i = 1; i < pq.length; i++) {
+          if (pq[i].dist < pq[minIndex].dist) minIndex = i;
+        }
+        return pq.splice(minIndex, 1)[0];
+      }
+
+      while (pq.length > 0) {
+        pq.sort((a,b) => a.dist - b.dist);
+        const { node: u, dist: curDist } = pq.shift();
+
+        if (curDist > dist[u]) continue;
+
+        // Mark current node
+        nodes[u].div.classList.remove('current');
+        nodes[u].div.classList.add('visited');
+        const graphNodeDiv = graphDiv.children[u];
+        graphNodeDiv.classList.add('visited');
+
+        for (const { to: v, w } of adj[u]) {
+          const edgeObj = edgeElements.find(e => e.from === u && e.to === v);
+          edgeObj.element.classList.add('highlight');
+
+          if (dist[u] + w < dist[v]) {
+            dist[v] = dist[u] + w;
+            prev[v] = u;
+            nodes[v].distSpan.textContent = dist[v];
+            nodes[v].div.classList.add('updated');
+            graphDiv.children[v].classList.add('updated');
+
+            // Add or update priority queue
+            const pqIndex = pq.findIndex(x => x.node === v);
+            if (pqIndex === -1) pq.push({ node: v, dist: dist[v] });
+            else pq[pqIndex].dist = dist[v];
+          }
+
+          await sleep(1000);
+
+          edgeObj.element.classList.remove('highlight');
+          nodes[v].div.classList.remove('updated');
+          graphDiv.children[v].classList.remove('updated');
+        }
+      }
+
+      // Highlight shortest paths from source to each node
+      for(let i = 1; i < n; i++) {
+        let cur = i;
+        while (prev[cur] !== null) {
+          const from = prev[cur];
+          const to = cur;
+
+          // Highlight the edge on graph
+          const edgeObj = edgeElements.find(e => e.from === from && e.to === to);
+          if(edgeObj) edgeObj.element.classList.add('highlight');
+
+          // Highlight nodes on path
+          graphDiv.children[cur].classList.add('path');
+          graphDiv.children[from].classList.add('path');
+
+          cur = from;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

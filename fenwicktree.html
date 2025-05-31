@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fenwick Tree Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: white;
+    }
+    .array-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .cell {
+      width: 40px;
+      height: 40px;
+      background: #1e293b;
+      border: 2px solid white;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      user-select: none;
+    }
+    .label {
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+      color: #a5b4fc;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="p-6">
+
+  <h1 class="text-3xl font-bold mb-6">Fenwick Tree Visualizer</h1>
+
+  <div class="flex flex-wrap gap-4 mb-6 items-center">
+    <div>
+      <label for="updateIndex" class="block mb-1">Update Index (1-based)</label>
+      <input
+        id="updateIndex"
+        type="number"
+        min="1"
+        class="text-black bg-white placeholder-gray-500 px-3 py-2 rounded w-28"
+        placeholder="Index"
+      />
+    </div>
+    <div>
+      <label for="updateValue" class="block mb-1">Update Value (+/-)</label>
+      <input
+        id="updateValue"
+        type="number"
+        class="text-black bg-white placeholder-gray-500 px-3 py-2 rounded w-28"
+        placeholder="Value"
+      />
+    </div>
+    <button
+      onclick="updateFenwick()"
+      class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-6"
+    >
+      Update
+    </button>
+  </div>
+
+  <div class="flex flex-wrap gap-4 mb-6 items-center">
+    <div>
+      <label for="queryIndex" class="block mb-1">Query Prefix Sum (1-based)</label>
+      <input
+        id="queryIndex"
+        type="number"
+        min="1"
+        class="text-black bg-white placeholder-gray-500 px-3 py-2 rounded w-28"
+        placeholder="Index"
+      />
+    </div>
+    <button
+      onclick="queryFenwick()"
+      class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-6"
+    >
+      Query
+    </button>
+  </div>
+
+  <button
+    onclick="resetTree()"
+    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-6"
+  >
+    Reset
+  </button>
+
+  <div>
+    <div class="label">Original Array (1-based)</div>
+    <div id="originalArray" class="array-container"></div>
+  </div>
+
+  <div>
+    <div class="label">Fenwick Tree Array</div>
+    <div id="fenwickArray" class="array-container"></div>
+  </div>
+
+  <div id="queryResult" class="mt-4 text-lg font-semibold"></div>
+
+<script>
+  const size = 10;
+  let arr = new Array(size + 1).fill(0);
+  let fenw = new Array(size + 1).fill(0);
+
+  function updateFenw(index, delta) {
+    while (index <= size) {
+      fenw[index] += delta;
+      index += index & (-index);
+    }
+  }
+
+  function queryFenw(index) {
+    let sum = 0;
+    while (index > 0) {
+      sum += fenw[index];
+      index -= index & (-index);
+    }
+    return sum;
+  }
+
+  function updateFenwick() {
+    const idx = parseInt(document.getElementById("updateIndex").value);
+    const val = parseInt(document.getElementById("updateValue").value);
+    if (isNaN(idx) || isNaN(val) || idx < 1 || idx > size) {
+      alert("Please enter valid index and value");
+      return;
+    }
+    arr[idx] += val;
+    updateFenw(idx, val);
+    drawArrays();
+    document.getElementById("updateIndex").value = "";
+    document.getElementById("updateValue").value = "";
+    document.getElementById("queryResult").textContent = "";
+  }
+
+  function queryFenwick() {
+    const idx = parseInt(document.getElementById("queryIndex").value);
+    if (isNaN(idx) || idx < 1 || idx > size) {
+      alert("Please enter a valid query index");
+      return;
+    }
+    const sum = queryFenw(idx);
+    document.getElementById("queryResult").textContent = `Prefix sum up to index ${idx}: ${sum}`;
+    document.getElementById("queryIndex").value = "";
+  }
+
+  function resetTree() {
+    arr.fill(0);
+    fenw.fill(0);
+    drawArrays();
+    document.getElementById("queryResult").textContent = "";
+  }
+
+  function drawArrays() {
+    const originalDiv = document.getElementById("originalArray");
+    const fenwDiv = document.getElementById("fenwickArray");
+    originalDiv.innerHTML = "";
+    fenwDiv.innerHTML = "";
+    for(let i = 1; i <= size; i++) {
+      const origCell = document.createElement("div");
+      origCell.className = "cell";
+      origCell.textContent = arr[i];
+      originalDiv.appendChild(origCell);
+
+      const fenwCell = document.createElement("div");
+      fenwCell.className = "cell";
+      fenwCell.textContent = fenw[i];
+      fenwDiv.appendChild(fenwCell);
+    }
+  }
+
+  resetTree();
+</script>
+
+</body>
+</html>

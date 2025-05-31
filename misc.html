@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSA Visualizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background-color: #1f2937;
+    color: #f9fafb;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  h1 {
+    font-weight: 800;
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #3b82f6;
+  }
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #374151;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 15px rgba(59, 130, 246, 0.3);
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+  }
+  .card:hover {
+    background-color: #2563eb;
+    transform: translateY(-6px);
+  }
+  .card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #e0e7ff;
+  }
+  .card p {
+    color: #cbd5e1;
+    font-size: 1rem;
+    text-align: center;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <h1 class="text-4xl font-bold text-blue-450 mb-4">DSA Visualizer</h1>
+  <div class="grid-container">
+    <div class="card" onclick="location.href='slidingwindow.html'">
+      <h2>Sliding Window</h2>
+      <p>Techniques for substrings, anagrams, and window-based search.</p>
+    </div>
+    <div class="card" onclick="location.href='twopointer.html'">
+      <h2>Two Pointer</h2>
+      <p>Visualize solving problems using left/right pointer movement.</p>
+    </div>
+    <div class="card" onclick="location.href='cycledetection.html'">
+      <h2>Cycle Detection</h2>
+      <p>Floyd’s Tortoise and Hare algorithm to detect loops in sequences.</p>
+    </div>
+  </div>
+</body>
+</html>

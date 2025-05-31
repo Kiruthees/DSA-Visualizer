@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trie Visualizer</title>
+  <style>
+    body {
+      background-color: #0e1a2b;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #00bfff;
+      margin-bottom: 1.5rem;
+    }
+
+    .controls {
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #1d3758;
+      color: #ffffff;
+      outline: none;
+      width: 200px;
+    }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      background-color: #2ee59d;
+      border: none;
+      border-radius: 6px;
+      color: #0e1a2b;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #25c88a;
+    }
+
+    #visualizer {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .node {
+      background-color: #182c44;
+      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      color: #ff7f50;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0, 191, 255, 0.2);
+    }
+
+    .level {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Trie Visualizer</h1>
+
+  <div class="controls">
+    <input type="text" id="wordInput" placeholder="Enter word...">
+    <button onclick="insertWord()">Insert</button>
+    <button onclick="clearTrie()">Clear</button>
+  </div>
+
+  <div id="visualizer"></div>
+
+  <script>
+    class TrieNode {
+      constructor(value = '') {
+        this.value = value;
+        this.children = {};
+        this.isEndOfWord = false;
+      }
+    }
+
+    class Trie {
+      constructor() {
+        this.root = new TrieNode();
+      }
+
+      insert(word) {
+        let current = this.root;
+        for (const char of word) {
+          if (!current.children[char]) {
+            current.children[char] = new TrieNode(char);
+          }
+          current = current.children[char];
+        }
+        current.isEndOfWord = true;
+      }
+    }
+
+    const trie = new Trie();
+
+    function insertWord() {
+      const word = document.getElementById('wordInput').value.trim();
+      if (word === '') return;
+      trie.insert(word);
+      document.getElementById('wordInput').value = '';
+      renderTrie();
+    }
+
+    function clearTrie() {
+      trie.root = new TrieNode();
+      document.getElementById('visualizer').innerHTML = '';
+    }
+
+    function renderTrie() {
+      const visualizer = document.getElementById('visualizer');
+      visualizer.innerHTML = '';
+
+      function traverse(node, level = 0, container = null) {
+        const div = document.createElement('div');
+        div.className = 'node';
+        div.innerText = node.value || 'root';
+
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'level';
+          visualizer.appendChild(container);
+        }
+
+        container.appendChild(div);
+
+        const childContainer = document.createElement('div');
+        childContainer.className = 'level';
+        visualizer.appendChild(childContainer);
+
+        for (const key in node.children) {
+          traverse(node.children[key], level + 1, childContainer);
+        }
+      }
+
+      traverse(trie.root);
+    }
+  </script>
+</body>
+</html>

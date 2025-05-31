@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Z-Algorithm Visualizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background-color: #1a202c;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    color: #22d3ee;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  p.desc {
+    color: #a0aec0;
+    max-width: 700px;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  input[type="text"] {
+    background-color: white;
+    color: black;
+    border: 2px solid #22d3ee;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 1.2rem;
+    width: 25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 8px #06b6d4;
+  }
+  button {
+    background-color: #ef4444;
+    color: white;
+    padding: 0.6rem 1.75rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 1.2rem;
+    margin-left: 0.75rem;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #dc2626;
+  }
+  button:disabled {
+    background-color: #a1a1aa;
+    cursor: not-allowed;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .string-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .char-box {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #22d3ee;
+    margin: 0 3px;
+    font-size: 1.5rem;
+    color: #22d3ee;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    user-select: none;
+    position: relative;
+  }
+  .char-box.active {
+    background-color: #22d3ee;
+    color: #101820;
+    font-weight: 900;
+  }
+  .z-array {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .z-box {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #ef4444;
+    margin: 0 3px;
+    font-size: 1.3rem;
+    color: #ef4444;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    user-select: none;
+    position: relative;
+  }
+  .z-box.updated {
+    background-color: #ef4444;
+    color: #101820;
+    font-weight: 900;
+  }
+  .info {
+    margin-top: 2rem;
+    max-width: 700px;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <h1 class="text-4xl font-bold text-cyan-400 mb-4">Z-Algorithm Visualizer</h1>
+  <p class="desc">The Z-Algorithm computes an array where each position stores the length of the longest substring starting from that position that matches the prefix of the entire string. Enter any string below and see the Z-array computation step-by-step.</p>
+
+  <div class="container">
+    <div>
+      <input type="text" id="inputString" placeholder="Enter a string, e.g. abracadabra" />
+      <button id="startBtn" onclick="startZAlgorithm()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Search</button>
+      <button id="resetBtn" onclick="resetVisualizer()" class="bg-red-600 hover:bg-gray-700 px-4 py-2 rounded">Reset</button>
+    </div>
+
+    <div class="string-container" id="stringContainer"></div>
+    <div class="z-array" id="zArrayContainer"></div>
+    <div class="info" id="infoText"></div>
+  </div>
+
+<script>
+  const inputString = document.getElementById('inputString');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const stringContainer = document.getElementById('stringContainer');
+  const zArrayContainer = document.getElementById('zArrayContainer');
+  const infoText = document.getElementById('infoText');
+
+  let str = '';
+  let z = [];
+  let i = 1;
+  let l = 0;
+  let r = 0;
+  let interval = null;
+
+  function renderString(highlightIndex = -1) {
+    stringContainer.innerHTML = '';
+    for (let idx = 0; idx < str.length; idx++) {
+      const div = document.createElement('div');
+      div.textContent = str[idx];
+      div.className = 'char-box';
+      if (idx === highlightIndex) {
+        div.classList.add('active');
+      }
+      stringContainer.appendChild(div);
+    }
+  }
+
+  function renderZArray(updatedIndex = -1) {
+    zArrayContainer.innerHTML = '';
+    for (let idx = 0; idx < z.length; idx++) {
+      const div = document.createElement('div');
+      div.textContent = z[idx];
+      div.className = 'z-box';
+      if (idx === updatedIndex) {
+        div.classList.add('updated');
+      }
+      zArrayContainer.appendChild(div);
+    }
+  }
+
+  function info(message) {
+    infoText.textContent = message;
+  }
+
+  function resetVisualizer() {
+    clearInterval(interval);
+    i = 1; l = 0; r = 0;
+    z = new Array(str.length).fill(0);
+    renderString();
+    renderZArray();
+    info('Reset done. Enter a string and click Start.');
+    startBtn.disabled = false;
+    resetBtn.disabled = true;
+    inputString.disabled = false;
+  }
+
+  async function startZAlgorithm() {
+    str = inputString.value.trim();
+    if (str.length === 0) {
+      alert('Please enter a non-empty string');
+      return;
+    }
+    startBtn.disabled = true;
+    inputString.disabled = true;
+    resetBtn.disabled = false;
+    z = new Array(str.length).fill(0);
+    i = 1; l = 0; r = 0;
+    renderString();
+    renderZArray();
+
+    info('Starting Z-Algorithm computation...');
+
+    for (; i < str.length; i++) {
+      renderString(i);
+      await sleep(700);
+      if (i <= r) {
+        z[i] = Math.min(r - i + 1, z[i - l]);
+        info(`Position i=${i} is inside [L,R]=[${l},${r}]. Initial z[i] set to min(R - i + 1, z[i - L]) = ${z[i]}`);
+      } else {
+        z[i] = 0;
+        info(`Position i=${i} is outside [L,R]. Starting with z[i] = 0`);
+      }
+      renderZArray(i);
+      await sleep(700);
+
+      while (i + z[i] < str.length && str[z[i]] === str[i + z[i]]) {
+        z[i]++;
+        info(`Matching prefix at position ${i} extended: z[${i}] = ${z[i]}`);
+        renderZArray(i);
+        await sleep(500);
+      }
+
+      if (i + z[i] - 1 > r) {
+        l = i;
+        r = i + z[i] - 1;
+        info(`Updated [L,R] to [${l},${r}]`);
+      }
+      renderZArray(i);
+      await sleep(700);
+    }
+
+    info('Z-Array computation completed.');
+    renderString(-1);
+    startBtn.disabled = false;
+    inputString.disabled = false;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+</script>
+</body>
+</html>

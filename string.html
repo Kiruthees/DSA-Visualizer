@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>String Algorithms Visualizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background-color: #1f2937; /* dark gray */
+    color: #f9fafb; /* light */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  h1 {
+    font-weight: 800;
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #3b82f6; /* blue-500 */
+  }
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #374151; /* gray-700 */
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 15px rgba(59, 130, 246, 0.3);
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+  }
+  .card:hover {
+    background-color: #2563eb; /* blue-600 */
+    transform: translateY(-6px);
+  }
+  .card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #e0e7ff; /* lighter blue */
+  }
+  .card p {
+    color: #cbd5e1;
+    font-size: 1rem;
+    text-align: center;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <h1 class="text-4xl font-bold text-blue-450 mb-4">String Algorithms Visualizer</h1>
+  <div class="grid-container">
+    <div class="card" onclick="location.href='kmp.html'">
+      <h2>KMP Algorithm</h2>
+      <p>Knuth-Morris-Pratt pattern matching visual with prefix function computation.</p>
+    </div>
+    <div class="card" onclick="location.href='zalgo.html'">
+      <h2>Z Algorithm</h2>
+      <p>Efficient pattern searching with Z-array computation and visualization.</p>
+    </div>
+    <div class="card" onclick="location.href='manacher.html'">
+      <h2>Manacher's Algorithm</h2>
+      <p>Find the longest palindromic substring using Manacher’s algorithm visualization.</p>
+    </div>
+  </div>
+</body>
+</html>

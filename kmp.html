@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KMP Algorithm Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #1a202c;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
+    }
+    .highlight {
+      background-color: #4ade80; /* green-400 */
+      color: black;
+      font-weight: bold;
+    }
+    .match {
+      background-color: #facc15; /* yellow-400 */
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="text-3xl font-bold text-cyan-400 mb-4">KMP Pattern Matching Visualizer</h1>
+  <div class="mb-4">
+    <input id="textInput" type="text" placeholder="Text" class="text-black p-2 rounded w-1/2" />
+    <input id="patternInput" type="text" placeholder="Pattern" class="text-black p-2 rounded w-1/2 mt-2" />
+    <button onclick="startKMP()" class="mt-2 px-6 py-2 bg-red-600 hover:bg-red-700 rounded">Start KMP</button>
+  </div>
+  <div id="output" class="text-lg leading-8"></div>
+
+  <script>
+    function computeLPSArray(pattern) {
+      const lps = Array(pattern.length).fill(0);
+      let len = 0, i = 1;
+      while (i < pattern.length) {
+        if (pattern[i] === pattern[len]) {
+          len++;
+          lps[i] = len;
+          i++;
+        } else {
+          if (len !== 0) {
+            len = lps[len - 1];
+          } else {
+            lps[i] = 0;
+            i++;
+          }
+        }
+      }
+      return lps;
+    }
+
+    async function startKMP() {
+      const text = document.getElementById("textInput").value;
+      const pattern = document.getElementById("patternInput").value;
+      const output = document.getElementById("output");
+      output.innerHTML = "";
+      if (!text || !pattern) return;
+
+      const lps = computeLPSArray(pattern);
+      let i = 0, j = 0;
+
+      while (i < text.length) {
+        renderText(text, i, j, pattern.length);
+        await new Promise(res => setTimeout(res, 500));
+
+        if (pattern[j] === text[i]) {
+          i++;
+          j++;
+        }
+
+        if (j === pattern.length) {
+          renderText(text, i - j, j, pattern.length, true);
+          await new Promise(res => setTimeout(res, 800));
+          j = lps[j - 1];
+        } else if (i < text.length && pattern[j] !== text[i]) {
+          if (j !== 0) {
+            j = lps[j - 1];
+          } else {
+            i++;
+          }
+        }
+      }
+    }
+
+    function renderText(text, index, matchIndex, patLen, isMatch = false) {
+      const output = document.getElementById("output");
+      let html = "";
+      for (let i = 0; i < text.length; i++) {
+        if (isMatch && i >= index && i < index + patLen) {
+          html += `<span class='match px-1'>${text[i]}</span>`;
+        } else if (i >= index && i < index + matchIndex) {
+          html += `<span class='highlight px-1'>${text[i]}</span>`;
+        } else {
+          html += `<span class='px-1'>${text[i]}</span>`;
+        }
+      }
+      output.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

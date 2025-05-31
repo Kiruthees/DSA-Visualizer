@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>0/1 Knapsack Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .cell {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .active {
+      background-color: #fbbf24;
+    }
+    .filled {
+      background-color: #4ade80;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center px-4 py-10">
+  <h1 class="text-4xl font-bold text-orange-400 mb-4">0/1 Knapsack Visualizer</h1>
+  <p class="text-gray-300 mb-6 max-w-2xl text-center">
+    The 0/1 Knapsack Problem uses dynamic programming to determine the maximum value that can be obtained with a limited capacity. Time Complexity: <strong>O(nW)</strong>
+  </p>
+
+  <div class="flex gap-4 mb-6 flex-wrap justify-center">
+    <input id="weights" type="text" placeholder="Weights (e.g. 1,3,4)" class="px-3 py-2 rounded text-black w-64">
+    <input id="values" type="text" placeholder="Values (e.g. 15,20,50)" class="px-3 py-2 rounded text-black w-64">
+    <input id="capacity" type="number" placeholder="Capacity" class="px-3 py-2 rounded text-black w-24">
+    <button onclick="startKnapsack()" class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded">Run</button>
+    <button onclick="reset()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded">Reset</button>
+  </div>
+
+  <div id="grid" class="overflow-auto max-w-full max-h-[500px] border border-slate-500 mb-4"></div>
+  <p id="status" class="text-orange-300 text-lg mt-2"></p>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const status = document.getElementById('status');
+    const delay = 400;
+    let dp = [];
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function createGrid(rows, cols) {
+      grid.innerHTML = '';
+      const table = document.createElement('div');
+      table.className = 'grid';
+      table.style.gridTemplateColumns = `repeat(${cols}, auto)`;
+      for (let i = 0; i < rows; i++) {
+        dp[i] = [];
+        for (let j = 0; j < cols; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.id = `cell-${i}-${j}`;
+          cell.textContent = '0';
+          table.appendChild(cell);
+          dp[i][j] = 0;
+        }
+      }
+      grid.appendChild(table);
+    }
+
+    function updateCell(i, j, value, highlight = false) {
+      const cell = document.getElementById(`cell-${i}-${j}`);
+      cell.textContent = value;
+      cell.className = 'cell' + (highlight ? ' active' : '');
+    }
+
+    async function knapsack(weights, values, W) {
+      const n = weights.length;
+      createGrid(n + 1, W + 1);
+
+      for (let i = 1; i <= n; i++) {
+        for (let w = 0; w <= W; w++) {
+          document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+          await sleep(delay);
+
+          if (weights[i - 1] <= w) {
+            const include = values[i - 1] + dp[i - 1][w - weights[i - 1]];
+            const exclude = dp[i - 1][w];
+            dp[i][w] = Math.max(include, exclude);
+          } else {
+            dp[i][w] = dp[i - 1][w];
+          }
+
+          updateCell(i, w, dp[i][w], true);
+        }
+      }
+
+      document.getElementById(`cell-${n}-${W}`).classList.add('filled');
+      status.textContent = `Maximum Value: ${dp[n][W]}`;
+    }
+
+    async function startKnapsack() {
+      const weightInput = document.getElementById('weights').value.trim();
+      const valueInput = document.getElementById('values').value.trim();
+      const capacity = parseInt(document.getElementById('capacity').value);
+
+      if (!weightInput || !valueInput || isNaN(capacity)) {
+        alert("Enter valid weights, values, and capacity.");
+        return;
+      }
+
+      const weights = weightInput.split(',').map(x => parseInt(x.trim()));
+      const values = valueInput.split(',').map(x => parseInt(x.trim()));
+
+      if (weights.length !== values.length) {
+        alert("Weights and values must have the same length.");
+        return;
+      }
+
+      status.textContent = 'Running...';
+      await knapsack(weights, values, capacity);
+    }
+
+    function reset() {
+      dp = [];
+      grid.innerHTML = '';
+      status.textContent = '';
+      document.getElementById('weights').value = '';
+      document.getElementById('values').value = '';
+      document.getElementById('capacity').value = '';
+    }
+  </script>
+</body>
+</html>

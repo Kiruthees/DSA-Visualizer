@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Visualizer</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>DSA Visualizer</h1>
+  </header>
+
+  <main>
+    <section class="card-container">
+      <div class="card" onclick="location.href='graph.html'">
+        <h2>Graphs</h2>
+      </div>
+      <div class="card" onclick="location.href='trees.html'">
+        <h2>Trees</h2>
+      </div>
+      <div class="card" onclick="location.href='sorting.html'">
+        <h2>Sorting</h2>
+      </div>
+      <div class="card" onclick="location.href='searching.html'">
+        <h2>Searching</h2>
+      </div>
+      <div class="card" onclick="location.href='greedy.html'">
+        <h2>Greedy</h2>
+      </div>
+      <div class="card" onclick="location.href='knapsack.html'">
+        <h2>Dynamic Programming</h2>
+      </div>
+      <div class="card" onclick="location.href='queens.html'">
+        <h2>Backtracking</h2>
+      </div>
+      <div class="card" onclick="location.href='string.html'">
+        <h2>String Algorithms</h2>
+      </div>
+      <div class="card" onclick="location.href='misc.html'">
+        <h2>Miscellaneous</h2>
+      </div>
+    </section>
+
+    <section class="subtopics" id="graph">
+      <a href="graph/dfs.html" class="subcard">DFS</a>
+      <a href="graph/bfs.html" class="subcard">BFS</a>
+      <a href="graph/dijkstra.html" class="subcard">Dijkstra</a>
+      <a href="graph/prims.html" class="subcard">Prim's</a>
+      <a href="graph/kruskal.html" class="subcard">Kruskal's</a>
+      <a href="graph/bellmanford.html" class="subcard">Bellman-Ford</a>
+      <a href="graph/floydwarshall.html" class="subcard">Floyd-Warshall</a>
+      <a href="graph/toposort.html" class="subcard">Topological Sort</a>
+      <a href="graph/unionfind.html" class="subcard">Union-Find</a>
+      <a href="graph/kosaraju.html" class="subcard">Kosaraju's</a>
+    </section>
+
+    <section class="subtopics" id="trees">
+      <a href="trees/binarytree.html" class="subcard">Binary Tree</a>
+      <a href="trees/bst.html" class="subcard">BST</a>
+      <a href="trees/avl.html" class="subcard">AVL Tree</a>
+      <a href="trees/segment.html" class="subcard">Segment Tree</a>
+      <a href="trees/fenwick.html" class="subcard">Fenwick Tree</a>
+      <a href="trees/trie.html" class="subcard">Trie</a>
+      <a href="trees/lca.html" class="subcard">Lowest Common Ancestor</a>
+    </section>
+
+    <section class="subtopics" id="sorting">
+      <a href="sorting/bubble.html" class="subcard">Bubble Sort</a>
+      <a href="sorting/selection.html" class="subcard">Selection Sort</a>
+      <a href="sorting/insertion.html" class="subcard">Insertion Sort</a>
+      <a href="sorting/merge.html" class="subcard">Merge Sort</a>
+      <a href="sorting/quick.html" class="subcard">Quick Sort</a>
+      <a href="sorting/heap.html" class="subcard">Heap Sort</a>
+      <a href="sorting/counting.html" class="subcard">Counting Sort</a>
+      <a href="sorting/radix.html" class="subcard">Radix Sort</a>
+      <a href="sorting/shell.html" class="subcard">Shell Sort</a>
+    </section>
+
+    <section class="subtopics" id="searching">
+      <a href="searching/binary.html" class="subcard">Binary Search</a>
+      <a href="searching/ternary.html" class="subcard">Ternary Search</a>
+      <a href="searching/jump.html" class="subcard">Jump Search</a>
+      <a href="searching/interpolation.html" class="subcard">Interpolation Search</a>
+    </section>
+
+    <section class="subtopics" id="greedy">
+      <a href="greedy/activity.html" class="subcard">Activity Selection</a>
+      <a href="greedy/fractional.html" class="subcard">Fractional Knapsack</a>
+      <a href="greedy/huffman.html" class="subcard">Huffman Coding</a>
+      <a href="greedy/job.html" class="subcard">Job Sequencing</a>
+    </section>
+
+    <section class="subtopics" id="dp">
+      <a href="dp/knapsack.html" class="subcard">0/1 Knapsack</a>
+      <a href="dp/lcs.html" class="subcard">LCS</a>
+      <a href="dp/lis.html" class="subcard">LIS</a>
+      <a href="dp/mcm.html" class="subcard">Matrix Chain Multiplication</a>
+      <a href="dp/edit.html" class="subcard">Edit Distance</a>
+      <a href="dp/subset.html" class="subcard">Subset Sum</a>
+      <a href="dp/coinchange.html" class="subcard">Coin Change</a>
+      <a href="dp/rod.html" class="subcard">Rod Cutting</a>
+    </section>
+
+    <section class="subtopics" id="backtracking">
+      <a href="backtracking/nqueens.html" class="subcard">N-Queens</a>
+      <a href="backtracking/sudoku.html" class="subcard">Sudoku Solver</a>
+      <a href="backtracking/ratmaze.html" class="subcard">Rat in a Maze</a>
+      <a href="backtracking/subsets.html" class="subcard">Subset Generator</a>
+      <a href="backtracking/permutations.html" class="subcard">Permutations</a>
+    </section>
+
+    <section class="subtopics" id="string">
+      <a href="string/kmp.html" class="subcard">KMP</a>
+      <a href="string/rabinkarp.html" class="subcard">Rabin-Karp</a>
+      <a href="string/zalgo.html" class="subcard">Z-Algorithm</a>
+      <a href="string/manacher.html" class="subcard">Manacher's</a>
+    </section>
+
+    <section class="subtopics" id="misc">
+      <a href="misc/slidingwindow.html" class="subcard">Sliding Window Max</a>
+      <a href="misc/twopointer.html" class="subcard">Two Pointer</a>
+      <a href="misc/cycledetection.html" class="subcard">Cycle Detection</a>
+    </section>
+  </main>
+
+  <script src="assets/script.js"></script>
+</body>
+</html>
